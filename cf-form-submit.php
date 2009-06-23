@@ -125,7 +125,6 @@ function cffs_validate_data() {
 				}
 			}
 			elseif (/*isset($_FILES[$post_meta]) && */$_FILES[$post_meta]['size'] > 0 && $_FILES[$post_meta]['temp_name'] != 'none') {
-				de("we have found the image for post");
 				$post_meta_image_id = cffs_process_image($_FILES[$post_meta]);
 				$data['post_meta'][$post_meta] = $post_meta_image_id;
 			}
