@@ -16,6 +16,10 @@ if (!defined('PLUGINDIR')) {
 	define('PLUGINDIR','wp-content/plugins');
 }
 
+if (!defined('CF_FORM_CATEGORY_ID') || !defined('CF_FORM_CATEGORY')) {
+	wp_die("Required Constants \"Form Category ID\" and \"Form Category\" not defined.  Please correct this error and try again.");
+}
+
 $cffs_error = new WP_Error;
 
 if (!function_exists('is_admin_page')) {
@@ -38,7 +42,7 @@ function cffs_admin_head() {
                 print("
 <script type=\"text/javascript\">
 jQuery(function($) {
-        $('#menu-posts .wp-submenu ul').append('<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&cat_ID=".CF_SHOWCASE_ID."\">Pending Approval</a></li>');
+        $('#menu-posts .wp-submenu ul').append('<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name=".CF_FORM_CATEGORY."\">Pending Approval</a></li>');
 });
 </script>
                 ");
@@ -49,12 +53,6 @@ if (is_admin_page()) {
         wp_enqueue_script('jquery');
 }
 add_action('admin_head', 'cffs_admin_head');
-
-function cffs_init() {
-// TODO
-}
-add_action('init', 'cffs_init');
-
 
 function cffs_request_handler() {
 	global $cffs_config;
@@ -236,13 +234,7 @@ function cffs_save_data($postdata) {
 				}
 			}
 		}
-		// // if the insert worked, we need to add the post_id so that cffp works
-		// $_REQUEST['post_ID'] = $post_id;
-		// // @todo we need to remove this and make a remove/add action function 
-		// // to replace it
-		// if (function_exists("cffp_request_handler")) {
-		// 	cffp_request_handler();
-		// }
+
 	}
 	if (count($cffs_error->errors) == 0) {
 		$page_url = get_option('siteurl');
