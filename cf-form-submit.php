@@ -17,7 +17,7 @@ if (!defined('PLUGINDIR')) {
 }
 
 if (!defined('CF_FORM_CATEGORY_ID') || !defined('CF_FORM_CATEGORY')) {
-	wp_die("Required Constants \"Form Category ID\" and \"Form Category\" not defined.  Please correct this error and try again.");
+	wp_die('Required Constants "Form Category ID" and "Form Category" not defined.  Please correct this error and try again.');
 }
 
 $cffs_error = new WP_Error;
@@ -285,6 +285,13 @@ function cffs_user_img_tag($user_id, $size = 'thumbnail', $user_meta) {
 	return '';
 }
 
+/**
+ * takes a cat id and converts it to the appropriate slug.
+ */
+function cffs_cat_id_to_slug($id) {
+	$cat = &get_category($id);
+	return $cat->slug;
+}
 
 //a:21:{s:11:"plugin_name";s:14:"cf-form-submit";s:10:"plugin_uri";s:24:"http://crowdfavorite.com";s:18:"plugin_description";s:69:"Allows the processing of forms, utilizing such things as cf_post_meta";s:14:"plugin_version";s:3:"0.5";s:6:"prefix";s:4:"cffs";s:12:"localization";N;s:14:"settings_title";N;s:13:"settings_link";N;s:4:"init";s:1:"1";s:7:"install";b:0;s:9:"post_edit";b:0;s:12:"comment_edit";b:0;s:6:"jquery";b:0;s:6:"wp_css";b:0;s:5:"wp_js";b:0;s:9:"admin_css";b:0;s:8:"admin_js";b:0;s:15:"request_handler";s:1:"1";s:6:"snoopy";b:0;s:11:"setting_cat";s:1:"1";s:14:"setting_author";s:1:"1";}
 
