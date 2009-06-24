@@ -286,7 +286,7 @@ function cffs_user_img_tag($user_id, $size = 'thumbnail', $user_meta) {
 }
 
 /**
- * takes a cat id and converts it to the appropriate slug.
+ * takes a cat id and converts it to the appropriate slug. 
  */
 function cffs_cat_id_to_slug($id) {
 	$cat = &get_category($id);
