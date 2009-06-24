@@ -16,8 +16,8 @@ if (!defined('PLUGINDIR')) {
 	define('PLUGINDIR','wp-content/plugins');
 }
 
-if (!defined('CF_FORM_CATEGORY_ID') || !defined('CF_FORM_CATEGORY')) {
-	wp_die('Required Constants "Form Category ID" and "Form Category" not defined.  Please correct this error and try again.');
+if (!defined('CF_FORM_CATEGORY_ID')) {
+	wp_die('Required Constant "Form Category ID" is not defined.  Please correct this error and try again.');
 }
 
 $cffs_error = new WP_Error;
@@ -38,11 +38,12 @@ if (!function_exists('is_admin_page')) {
 
 function cffs_admin_head() {
         global $wp_version;
+		$cat_slug = cffs_cat_id_to_slug(CF_FORM_CATEGORY_ID);
         if (isset($wp_version) && version_compare($wp_version, '2.7', '>=')) {
                 print("
 <script type=\"text/javascript\">
 jQuery(function($) {
-        $('#menu-posts .wp-submenu ul').append('<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name=".CF_FORM_CATEGORY."\">Pending Approval</a></li>');
+        $('#menu-posts .wp-submenu ul').append('<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name=".$cat_slug."\">Pending Approval</a></li>');
 });
 </script>
                 ");
