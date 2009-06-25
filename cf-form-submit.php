@@ -19,17 +19,17 @@ if (!defined('PLUGINDIR')) {
 $cffs_error = new WP_Error;
 
 function cffs_admin_head() {
-        global $wp_version;
+	global $wp_version;
 		$cat_slug = cffs_cat_id_to_slug(CF_FORM_CATEGORY_ID);
-        if (isset($wp_version) && version_compare($wp_version, '2.7', '>=')) {
-                print('
+	if (isset($wp_version) && version_compare($wp_version, '2.7', '>=')) {
+		print('
 <script type="text/javascript">
 jQuery(function($) {
-        $("#menu-posts .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name='.$cat_slug.'\">Pending Approval</a></li>");
+	$("#menu-posts .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name='.$cat_slug.'\">Pending Approval</a></li>");
 });
 </script>
-                ');
-        }
+		');
+	}
 }
 
 if (is_admin()) {
