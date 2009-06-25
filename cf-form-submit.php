@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: cf-form-submit 
+Plugin Name: CF Form Submit 
 Plugin URI: http://crowdfavorite.com 
 Description: Allows the processing of forms, utilizing such things as cf_post_meta 
 Version: 0.7 
@@ -16,40 +16,24 @@ if (!defined('PLUGINDIR')) {
 	define('PLUGINDIR','wp-content/plugins');
 }
 
-
-
 $cffs_error = new WP_Error;
-
-if (!function_exists('is_admin_page')) {
-        function is_admin_page() {
-                if (function_exists('is_admin')) {
-                        return is_admin();
-                }
-                if (function_exists('check_admin_referer')) {
-                        return true;
-                }
-                else {
-                        return false;
-                }
-        }
-}
 
 function cffs_admin_head() {
         global $wp_version;
 		$cat_slug = cffs_cat_id_to_slug(CF_FORM_CATEGORY_ID);
         if (isset($wp_version) && version_compare($wp_version, '2.7', '>=')) {
-                print("
-<script type=\"text/javascript\">
+                print('
+<script type="text/javascript">
 jQuery(function($) {
-        $('#menu-posts .wp-submenu ul').append('<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name=".$cat_slug."\">Pending Approval</a></li>');
+        $("#menu-posts .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name='.$cat_slug.'\">Pending Approval</a></li>");
 });
 </script>
-                ");
+                ');
         }
 }
 
-if (is_admin_page()) {
-        wp_enqueue_script('jquery');
+if (is_admin()) {
+	wp_enqueue_script('jquery');
 }
 add_action('admin_head', 'cffs_admin_head');
 
@@ -62,23 +46,20 @@ add_action('init','cffs_init');
 
 function cffs_request_handler() {
 	global $cffs_config;
-	$cffs_config = apply_filters('cffs_add_config',$cffs_config);
-	if (!empty($_GET['cf_action'])) {
-		switch ($_GET['cf_action']) {
-
-		}
-	}
+	$cffs_config = apply_filters('cffs_add_config', $cffs_config);
+// 	if (!empty($_GET['cf_action'])) {
+// 		switch ($_GET['cf_action']) {
+// 
+// 		}
+// 	}
 	if (!empty($_POST['cf_action'])) {
 		switch ($_POST['cf_action']) {
 			case 'cffs_submit':
 				// validate the data
-				
-				if ($valid_data = cffs_validate_data()) {
-
-					if (cffs_save_data($valid_data)) {
-						echo "<h3>We have reached the Save function successfully</h3>";
-					}
+				if ($valid_data = cffs_validate_data() && cffs_save_data($valid_data)) {
+					echo "<h3>We have reached the Save function successfully</h3>";
 				}
+				break;
 		}
 	}
 }
