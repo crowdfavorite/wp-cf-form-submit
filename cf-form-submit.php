@@ -16,9 +16,7 @@ if (!defined('PLUGINDIR')) {
 	define('PLUGINDIR','wp-content/plugins');
 }
 
-if (!defined('CF_FORM_CATEGORY_ID')) {
-	wp_die('Required Constant "Form Category ID" is not defined.  Please correct this error and try again.');
-}
+
 
 $cffs_error = new WP_Error;
 
@@ -54,6 +52,13 @@ if (is_admin_page()) {
         wp_enqueue_script('jquery');
 }
 add_action('admin_head', 'cffs_admin_head');
+
+function cffs_init() {
+	if (!defined('CF_FORM_CATEGORY_ID')) {
+		wp_die('Required Constant "Form Category ID" is not defined.  Please correct this error and try again.');
+	}
+}
+add_action('init','cffs_init');
 
 function cffs_request_handler() {
 	global $cffs_config;
