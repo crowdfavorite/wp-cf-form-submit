@@ -11,6 +11,8 @@ Author URI: http://crowdfavorite.com
 // ini_set('display_errors', '1'); ini_set('error_reporting', E_ALL);
 
 //include some debug code
+
+
 require_once(ABSPATH . 'wp-admin/includes/admin.php');
 if (!defined('PLUGINDIR')) {
 	define('PLUGINDIR','wp-content/plugins');
@@ -25,7 +27,7 @@ function cffs_admin_head() {
 		print('
 <script type="text/javascript">
 jQuery(function($) {
-	$("#menu-posts .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name='.$cat_slug.'\">Pending Approval</a></li>");
+	$("#menu-posts .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name='.$cat_slug.'\">Pending Review</a></li>");
 });
 </script>
 		');
@@ -56,7 +58,8 @@ function cffs_request_handler() {
 		switch ($_POST['cf_action']) {
 			case 'cffs_submit':
 				// validate the data
-				if ($valid_data = cffs_validate_data() && cffs_save_data($valid_data)) {
+				if ($valid_data = cffs_validate_data()) {
+					cffs_save_data($valid_data);
 					echo "<h3>We have reached the Save function successfully</h3>";
 				}
 				break;
@@ -67,7 +70,7 @@ add_action('init', 'cffs_request_handler', 11);
 
 // activate the post meta plugin for use outside of the admin interface
 function cffs_run_post_meta($val) {
-	if ($_POST['cf_action'] == 'cffs_submit') {
+	if (isset($_POST['cf_action']) && $_POST['cf_action'] == 'cffs_submit') {
 		
 		return true;
 	}
@@ -83,7 +86,7 @@ function cffs_validate_data() {
 	$cffs_allowed_postdata = apply_filters('cffs_get_postdata_fields',array('post_title','post_content'));
 	
 	$data = apply_filters('cffs_filter_postdata',$data);
-		
+			
 	foreach ($cffs_config['required'] as $postkey => $postvalue) {
 		if (!isset($_POST[$postkey]) || empty($_POST[$postkey])) {
 			$cffs_error->add($postkey,"You must enter a value for $postvalue");
@@ -109,7 +112,7 @@ function cffs_validate_data() {
 					
 				}
 			}
-			elseif (/*isset($_FILES[$post_meta]) && */$_FILES[$post_meta]['size'] > 0 && $_FILES[$post_meta]['temp_name'] != 'none') {
+			elseif (isset($_FILES[$post_meta]) && $_FILES[$post_meta]['size'] > 0 && $_FILES[$post_meta]['temp_name'] != 'none') {
 				$post_meta_image_id = cffs_process_image($_FILES[$post_meta]);
 				$data['post_meta'][$post_meta] = $post_meta_image_id;
 			}
@@ -126,7 +129,6 @@ function cffs_validate_data() {
 			}
 		}
 	}
-	
 	if (count($cffs_error->errors) > 0) {
 		echo "What is this? ".count($cffs_error->errors);
 		return false;
@@ -194,13 +196,11 @@ function cffs_save_image($tmpname, $filename, $postdata) {
 }
 
 function cffs_save_data($postdata) {
-
 	global $cffs_config, $current_user, $cffs_error;
 	if (function_exists('kses_init_filters')) {
 		kses_init_filters();
 		
 	}
-	
 	$post_id = wp_insert_post($postdata['postdata']);
 	if (!$post_id) {
 		$cffs_error->add("post-not-saved","An unknown error prevented your Submission, please try again.");
@@ -209,9 +209,7 @@ function cffs_save_data($postdata) {
 		
 		if (isset($postdata['user_meta']) && is_array($postdata['user_meta'])) {
 			foreach ($postdata['user_meta'] as $key => $value) {
-				if (!update_usermeta($current_user->ID, $key, $value)) {
-					wp_die("Unable to save $key");
-				}
+				update_usermeta($current_user->ID, $key, $value);
 			}
 		}
 		if (isset($postdata['post_meta']) && is_array($postdata['post_meta'])) {
@@ -274,7 +272,7 @@ function cffs_user_img_tag($user_id, $size = 'thumbnail', $user_meta) {
 
 /**
  * takes a cat id and converts it to the appropriate slug. 
- */
+**/
 function cffs_cat_id_to_slug($id) {
 	$cat = &get_category($id);
 	return $cat->slug;
