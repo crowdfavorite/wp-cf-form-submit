@@ -130,7 +130,6 @@ function cffs_validate_data() {
 		}
 	}
 	if (count($cffs_error->errors) > 0) {
-		echo "What is this? ".count($cffs_error->errors);
 		return false;
 	}
 	return $data;
@@ -145,7 +144,7 @@ function cffs_process_image($image) {
 	global $cffs_error;
 	// @todo failier handling needs to be implemented.
 	$uploaddir = wp_upload_dir();
-	
+	$file = str_replace(' ', '-', $image['name']);
 	$post_date = date('Y-m-d 00:00:00');
 	$postdata = array(
 		'post_status' => 'publish',
@@ -154,11 +153,11 @@ function cffs_process_image($image) {
 		'post_title' => $image['name'],
 		'post_date' => $post_date,
 		'post_date_gmt' => get_gmt_from_date($post_date),
-		'guid' => $uploaddir['url'].'/'.$image['name'],
+		'guid' => $uploaddir['url'].'/'.$file,
 		'post_mime_type' => $image['type'],			
 	);
 	
-	$filename = $uploaddir['path'].'/'.$image['name'];
+	$filename = $uploaddir['path'].'/'.$file;
 	
 	$attachment_id = cffs_save_image($image['tmp_name'], $filename, $postdata);
 	
