@@ -9,8 +9,7 @@ Author URI: http://crowdfavorite.com
 */
 
 // ini_set('display_errors', '1'); ini_set('error_reporting', E_ALL);
-
-//include some debug code
+// include('/Users/nathan/Sites/debug_code.php');
 
 
 require_once(ABSPATH . 'wp-admin/includes/admin.php');
@@ -23,12 +22,7 @@ $cffs_error = new WP_Error;
 function cffs_admin_head() {
 	global $wp_version;
 	$cat_slug = cffs_cat_id_to_slug(CF_FORM_CATEGORY_ID);
-	// if (isset($_GET['action'], $_GET['post']) && $_GET['action'] == 'edit'){
-	// 	if (function_exists('post_author_meta_box')) {
-	// 		global $post;
-	// 		post_author_meta_box($post)
-	// 	}
-	// }
+
 	if (isset($wp_version) && version_compare($wp_version, '2.7', '>=')) {
 		print('
 <script type="text/javascript">
@@ -90,7 +84,7 @@ add_filter('cf_meta_actions', 'cffs_run_post_meta', 10);
 function cffs_validate_data() {
 	global $cffs_error, $cffs_config;
 	$cffs_allowed_postdata = apply_filters('cffs_get_postdata_fields',array('post_title','post_content'));
-	
+	$data = array();
 	$data = apply_filters('cffs_filter_postdata',$data);
 			
 	foreach ($cffs_config['required'] as $postkey => $postvalue) {
@@ -201,17 +195,21 @@ function cffs_save_image($tmpname, $filename, $postdata) {
 }
 
 function cffs_save_data($postdata) {
+
 	global $cffs_config, $current_user, $cffs_error;
+	
 	if (function_exists('kses_init_filters')) {
+
 		kses_init_filters();
-		
+
 	}
 	$post_id = wp_insert_post($postdata['postdata']);
+
 	if (!$post_id) {
 		$cffs_error->add("post-not-saved","An unknown error prevented your Submission, please try again.");
 	}
 	else {
-		
+
 		if (isset($postdata['user_meta']) && is_array($postdata['user_meta'])) {
 			foreach ($postdata['user_meta'] as $key => $value) {
 				update_usermeta($current_user->ID, $key, $value);
@@ -282,6 +280,31 @@ function cffs_cat_id_to_slug($id) {
 	$cat = &get_category($id);
 	return $cat->slug;
 }
+
+/**
+ * add the user meta meta box
+ */
+function cffs_add_user_metabox() {
+	global $post, $cffs_config;
+	$user_id = get_post_meta($post->ID, '_showcase_user_id', TRUE);
+	
+?>
+<dl>
+<?php
+	foreach ($cffs_config['user_meta'] as $key): 
+		// Make key pretty
+		$key_label = ucwords(str_replace('_',' ',str_replace('_cffs_', '', $key)));
+?>
+	<dt><?php echo $key_label; ?></dt>
+	<dd><?php echo get_usermeta($user_id, $key); ?></dd>
+<?php
+	endforeach;
+?>
+</dl>
+<p>Click <a href="users-edit.php?user_id=<?php echo $user_id; ?>">here</a> to edit this information</p>
+<?php
+}
+add_meta_box('usermetadiv', __('User Meta Data'), 'cffs_add_user_metabox', 'post', 'advanced', 'high');
 
 //a:21:{s:11:"plugin_name";s:14:"cf-form-submit";s:10:"plugin_uri";s:24:"http://crowdfavorite.com";s:18:"plugin_description";s:69:"Allows the processing of forms, utilizing such things as cf_post_meta";s:14:"plugin_version";s:3:"0.5";s:6:"prefix";s:4:"cffs";s:12:"localization";N;s:14:"settings_title";N;s:13:"settings_link";N;s:4:"init";s:1:"1";s:7:"install";b:0;s:9:"post_edit";b:0;s:12:"comment_edit";b:0;s:6:"jquery";b:0;s:6:"wp_css";b:0;s:5:"wp_js";b:0;s:9:"admin_css";b:0;s:8:"admin_js";b:0;s:15:"request_handler";s:1:"1";s:6:"snoopy";b:0;s:11:"setting_cat";s:1:"1";s:14:"setting_author";s:1:"1";}
 
