@@ -90,13 +90,13 @@ function cffs_validate_data() {
 			
 	foreach ($cffs_config['required'] as $postkey => $postvalue) {
 		if (!isset($_POST[$postkey]) || empty($_POST[$postkey])) {
-			$cffs_error->add($postkey,"You must enter a value for $postvalue");
+			$cffs_error->add($postkey,$postvalue);
 		}
 	}
 	
 	foreach ($cffs_allowed_postdata as $key) {
 		if (isset($_POST[$key]) && !empty($_POST[$key])) {
-			$data['postdata'][$key] = $_POST[$key];
+			$data['postdata'][$key] = stripslashes($_POST[$key]);
 		}
 	}
 	if (isset($cffs_config['post_meta']) && is_array($cffs_config['post_meta'])) {
@@ -105,11 +105,11 @@ function cffs_validate_data() {
 		foreach ($cffs_config['post_meta'] as $post_meta) {
 			
 			if (isset($_POST[$post_meta]) && !empty($_POST[$post_meta])) {
-				$data['post_meta'][$post_meta] = attribute_escape($_POST[$post_meta]);
+				$data['post_meta'][$post_meta] = stripslashes(attribute_escape($_POST[$post_meta]));
 			}
 			elseif (isset($_POST['blocks'][$post_meta])) {			
 				foreach ($cffs_config[$post_meta] as $children_name => $children_value) {
-					$data['post_meta'][$post_meta][$i][$children_name] = attribute_escape($_POST['post_meta'][$post_meta][$i][$children_name]);
+					$data['post_meta'][$post_meta][$i][$children_name] = stripslashes(attribute_escape($_POST['post_meta'][$post_meta][$i][$children_name]));
 					
 				}
 			}
@@ -122,7 +122,7 @@ function cffs_validate_data() {
 	if (isset($cffs_config['user_meta']) && is_array($cffs_config['user_meta'])) {
 		foreach ($cffs_config['user_meta'] as $user_meta) {
 			if (isset($_POST[$user_meta]) && !empty($_POST[$user_meta])) {
-				$data['user_meta'][$user_meta] = attribute_escape($_POST[$user_meta]);
+				$data['user_meta'][$user_meta] = stripslashes(attribute_escape($_POST[$user_meta]));
 			}
 			elseif (isset($_FILES[$user_meta]) && $_FILES[$user_meta]['size'] > 0 && $_FILES[$user_meta]['temp_name'] != 'none') {
 				$user_meta_image_id = cffs_process_image($_FILES[$user_meta]);
