@@ -29,6 +29,9 @@ function cffs_admin_head() {
 jQuery(function($) {
 	$("#menu-posts .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"edit.php?post_status=pending&category_name='.$cat_slug.'\">Pending Review</a></li>");
 });
+jQuery(function($) {
+	$("form#your-profile").attr("enctype","multipart/form-data");
+});
 </script>
 		');
 	}
@@ -301,10 +304,105 @@ function cffs_add_user_metabox() {
 	endforeach;
 ?>
 </dl>
-<p>Click <a href="users-edit.php?user_id=<?php echo $user_id; ?>">here</a> to edit this information</p>
+<p>Click <a href="user-edit.php?user_id=<?php echo $user_id; ?>">here</a> to edit this information</p>
 <?php
 }
 add_meta_box('usermetadiv', __('User Meta Data'), 'cffs_add_user_metabox', 'post', 'advanced', 'high');
+
+function cffs_user_form() {
+	global $cffs_config, $profileuser;
+?>
+<table class="form-table">
+<?php
+	foreach ($cffs_config['user_meta'] as $metakey):
+		$type = cffs_decide_input_tupe($metakey);
+		$value = get_usermeta($profileuser->ID, $metakey);
+?>
+	<tr>
+		<th>
+			<label for="<?php echo $metakey; ?>"><?php echo cffs_make_label($metakey); ?></label>
+		</th>
+<?php
+		switch ($type):
+			case 'image':
+?>
+		<td>
+			<p><?php echo cffs_user_img_tag($profileuser->ID, 'logo', $metakey) ?></p>
+			<input type="file" name="<?php echo $metakey ?>" value="" id="<?php echo $metakey ?>">
+		</td>
+<?php
+			break;
+			case 'text':
+?>
+		<td><input type="text" name="<?php echo $metakey ?>" value="<?php echo $value; ?>" id="<?php echo $metakey; ?>"></td>
+<?php
+			break;
+			case 'textarea':
+?>
+		<td>
+			<textarea name="<?php echo $metakey; ?>"><?php echo $value; ?></textarea>
+		</td>		
+<?php
+			break;
+		endswitch;
+?>
+	</tr>
+<?php
+	endforeach;
+?>
+</table>
+<?php
+}
+add_action('show_user_profile', 'cffs_user_form');
+add_action('edit_user_profile', 'cffs_user_form');
+
+/**
+ * process user meta submited from the profile page
+**/
+function cffs_update_user_meta($user_id, $unused = null) {
+	global $cffs_config;
+	foreach ($cffs_config['user_meta'] as $metakey) {
+		$type = cffs_decide_input_tupe($metakey);
+		if ($type == 'image') {
+			$_POST[$metakey] = cffs_process_image($_FILES[$metakey]);
+		}
+		if (isset($_POST[$metakey])) {
+			$data = trim(stripslashes($_POST[$metakey]));
+			update_usermeta($user_id, $metakey, $data);
+		}
+	}
+}
+add_filter('user_register','cffs_update_user_meta');
+add_filter('profile_update', 'cffs_update_user_meta');
+
+/**
+ * Decide what type of input should be used
+ * 
+ * @param string $name - the name of the meta field
+ * @return string - the type of input field that should be used.
+ */
+function cffs_decide_input_tupe($name) {
+	$name_array = explode('_', $name);
+	if ($name_array[count($name_array)-1] == 'bio') {
+		return "textarea";
+	}
+	elseif ($name_array[count($name_array)-1] == 'logo') {
+		return "image";
+	}
+	return "text";
+}
+
+/**
+ * Strips off the prefix for this plugin, replaces _ with a space and caps the
+ * first letter
+ * 
+ * @param string $text - the name of the key that needs to be converted to a label
+ * @return string $label - the lable
+**/
+function cffs_make_label($text) {
+	$label = ucwords(str_replace('_',' ',str_replace('_cffs_', '', $text)));
+	return $label;
+}
 
 //a:21:{s:11:"plugin_name";s:14:"cf-form-submit";s:10:"plugin_uri";s:24:"http://crowdfavorite.com";s:18:"plugin_description";s:69:"Allows the processing of forms, utilizing such things as cf_post_meta";s:14:"plugin_version";s:3:"0.5";s:6:"prefix";s:4:"cffs";s:12:"localization";N;s:14:"settings_title";N;s:13:"settings_link";N;s:4:"init";s:1:"1";s:7:"install";b:0;s:9:"post_edit";b:0;s:12:"comment_edit";b:0;s:6:"jquery";b:0;s:6:"wp_css";b:0;s:5:"wp_js";b:0;s:9:"admin_css";b:0;s:8:"admin_js";b:0;s:15:"request_handler";s:1:"1";s:6:"snoopy";b:0;s:11:"setting_cat";s:1:"1";s:14:"setting_author";s:1:"1";}
 
