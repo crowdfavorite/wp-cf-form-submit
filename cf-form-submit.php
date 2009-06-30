@@ -9,8 +9,6 @@ Author URI: http://crowdfavorite.com
 */
 
 // ini_set('display_errors', '1'); ini_set('error_reporting', E_ALL);
-// include('/Users/nathan/Sites/debug_code.php');
-
 
 require_once(ABSPATH . 'wp-admin/includes/admin.php');
 if (!defined('PLUGINDIR')) {
@@ -260,8 +258,8 @@ function cffs_form_element_value($name) {
 }
 
 /**
- * @todo make this one specific, with a more generic one for future use
- * remove the $key and hard code the value for this one.
+ * @description asembles a link tag for an image stored as an attachement of a
+ * post or page
 **/
 function cffs_user_img_tag($user_id, $size = 'thumbnail', $user_meta) {
 
@@ -290,68 +288,86 @@ function cffs_cat_id_to_slug($id) {
 function cffs_add_user_metabox() {
 	global $post, $cffs_config;
 	$user_id = get_post_meta($post->ID, '_showcase_user_id', TRUE);
+	$user_metabox = '<table class="form-table">';
 	
-?>
-<dl>
-<?php
-	foreach ($cffs_config['user_meta'] as $key): 
-		// Make key pretty
-		$key_label = ucwords(str_replace('_',' ',str_replace('_cffs_', '', $key)));
-?>
-	<dt><?php echo $key_label; ?></dt>
-	<dd><?php echo get_usermeta($user_id, $key); ?></dd>
-<?php
-	endforeach;
-?>
-</dl>
-<p>Click <a href="user-edit.php?user_id=<?php echo $user_id; ?>">here</a> to edit this information</p>
-<?php
+	foreach ($cffs_config['user_meta'] as $key) { 
+		$type = cffs_decide_input_tupe($key);
+		$key_label = cffs_make_label($key);
+		$metavalue = get_usermeta($user_id, $key);
+		$user_metabox .= '
+	<tr>
+		<th>'.$key_label.'</th>';
+		
+		switch ($type) {
+			
+			case 'image':
+				$user_metabox .= '
+		<td>'.cffs_user_img_tag($user_id, 'logo', $key).'</td>';
+		
+				break;
+			case 'link':
+				$user_metabox .= '
+		<td><a href="'.$metavalue.'">'.$metavalue.'</a></td>';
+				break;
+				
+			default:
+				$user_metabox .= '
+		<td>'.$metavalue.'</td>';
+		
+				break;
+ 		}
+		$user_metabox .= '
+	</tr>';
+	}
+	$user_metabox .= '
+</table>
+<p>Click <a href="user-edit.php?user_id='.$user_id.'">here</a> to edit this information</p>';
+	echo $user_metabox;
 }
 add_meta_box('usermetadiv', __('User Meta Data'), 'cffs_add_user_metabox', 'post', 'advanced', 'high');
 
+/**
+ * Add fields for the user meta to be edited on the profile page
+ */
 function cffs_user_form() {
 	global $cffs_config, $profileuser;
-?>
-<table class="form-table">
-<?php
+	$user_meta_form = '<table class="form-table">';
+
 	foreach ($cffs_config['user_meta'] as $metakey):
 		$type = cffs_decide_input_tupe($metakey);
 		$value = get_usermeta($profileuser->ID, $metakey);
-?>
+		$user_meta_form .= '
 	<tr>
 		<th>
-			<label for="<?php echo $metakey; ?>"><?php echo cffs_make_label($metakey); ?></label>
-		</th>
-<?php
+			<label for="'.$metakey.'">'.cffs_make_label($metakey).'</label>
+		</th>';
+
 		switch ($type):
 			case 'image':
-?>
+				$user_meta_form .= '
 		<td>
-			<p><?php echo cffs_user_img_tag($profileuser->ID, 'logo', $metakey) ?></p>
-			<input type="file" name="<?php echo $metakey ?>" value="" id="<?php echo $metakey ?>">
-		</td>
-<?php
-			break;
+			<p>'.cffs_user_img_tag($profileuser->ID, 'logo', $metakey).'</p>
+			<input type="file" name="'.$metakey.'" value="" id="'.$metakey.'">
+		</td>';
+				break;
+			case 'link':
 			case 'text':
-?>
-		<td><input type="text" name="<?php echo $metakey ?>" value="<?php echo $value; ?>" id="<?php echo $metakey; ?>"></td>
-<?php
-			break;
+				$user_meta_form .= '
+		<td><input type="text" name="'.$metakey.'" value="'.$value.'" id="'.$metakey.'"></td>';
+				break;
 			case 'textarea':
-?>
+				$user_meta_form .= '
 		<td>
-			<textarea name="<?php echo $metakey; ?>"><?php echo $value; ?></textarea>
-		</td>		
-<?php
-			break;
+			<textarea name="'.$metakey.'">'.$value.'</textarea>
+		</td>';
+				break;
 		endswitch;
-?>
-	</tr>
-<?php
+		$user_meta_form .= '
+	</tr>';
+	
 	endforeach;
-?>
-</table>
-<?php
+	$user_meta_form .= '</table>';
+	echo $user_meta_form;
 }
 add_action('show_user_profile', 'cffs_user_form');
 add_action('edit_user_profile', 'cffs_user_form');
@@ -383,13 +399,23 @@ add_filter('profile_update', 'cffs_update_user_meta');
  */
 function cffs_decide_input_tupe($name) {
 	$name_array = explode('_', $name);
-	if ($name_array[count($name_array)-1] == 'bio') {
-		return "textarea";
+	$type_indecator = $name_array[count($name_array)-1];
+	switch ($type_indecator) {
+		case 'bio':
+			$type = 'textarea';
+			break;
+		case 'logo':
+			$type = 'image';
+			break;
+		case 'url':
+			$type = 'link';
+			break;
+		default:
+			$type = 'text';
+			break;
 	}
-	elseif ($name_array[count($name_array)-1] == 'logo') {
-		return "image";
-	}
-	return "text";
+	
+	return $type;
 }
 
 /**
