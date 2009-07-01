@@ -11,6 +11,7 @@ Author URI: http://crowdfavorite.com
 // ini_set('display_errors', '1'); ini_set('error_reporting', E_ALL);
 
 require_once(ABSPATH . 'wp-admin/includes/admin.php');
+require_once(ABSPATH . 'wp-includes/pluggable.php');
 if (!defined('PLUGINDIR')) {
 	define('PLUGINDIR','wp-content/plugins');
 }
@@ -33,6 +34,17 @@ jQuery(function($) {
 </script>
 		');
 	}
+	if(is_admin() && !current_user_can('edit_pages')) {
+		print('
+<script type="text/javascript">
+jQuery(function($) {
+	$("ul#adminmenu").after("<ul></ul>").remove();
+});
+</script>
+		');
+	}
+	
+	
 }
 
 if (is_admin()) {
@@ -369,8 +381,11 @@ function cffs_user_form() {
 	$user_meta_form .= '</table>';
 	echo $user_meta_form;
 }
-add_action('show_user_profile', 'cffs_user_form');
-add_action('edit_user_profile', 'cffs_user_form');
+if (current_user_can('edit_pages')) {
+	add_action('show_user_profile', 'cffs_user_form');
+	add_action('edit_user_profile', 'cffs_user_form');
+}
+
 
 /**
  * process user meta submited from the profile page
