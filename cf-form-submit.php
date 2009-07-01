@@ -62,11 +62,7 @@ add_action('init','cffs_init');
 function cffs_request_handler() {
 	global $cffs_config;
 	$cffs_config = apply_filters('cffs_add_config', $cffs_config);
-// 	if (!empty($_GET['cf_action'])) {
-// 		switch ($_GET['cf_action']) {
-// 
-// 		}
-// 	}
+
 	if (!empty($_POST['cf_action'])) {
 		switch ($_POST['cf_action']) {
 			case 'cffs_submit':
@@ -231,7 +227,7 @@ function cffs_save_data($postdata) {
 		if (isset($postdata['post_meta']) && is_array($postdata['post_meta'])) {
 			foreach ($postdata['post_meta'] as $key => $value) {
 				if (!add_post_meta($post_id,$key,$value)) {
-					wp_die("Unable to save $key");
+					$cffs_error->add($key.'-not-saved',"Unable to save $key");
 				}
 			}
 		}
@@ -272,7 +268,7 @@ function cffs_error_css_class($name,$error) {
 
 function cffs_form_element_value($name) {
 	if (isset($_POST[$name]) && !empty($_POST[$name])) {
-		return attribute_escape($_POST[$name]);
+		return stripslashes(htmlspecialchars($_POST[$name],ENT_QUOTES));
 	}
 	elseif (isset($_FILES[$name]) && is_array($_FILES[$name])) {
 		return $_FILES[$name];
