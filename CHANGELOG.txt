@@ -1,5 +1,8 @@
 # CF-Form-Submit Changelog
 
+## 1.0.1
+- fixed error handling for missing required settings/plugins
+
 ## 1.0
 - Initial release
 - Allows forms to be processed.  Allowed and Required fields are set via a configuration file
