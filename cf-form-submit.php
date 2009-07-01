@@ -101,7 +101,7 @@ function cffs_validate_data() {
 	$data = apply_filters('cffs_filter_postdata',$data);
 			
 	foreach ($cffs_config['required'] as $postkey => $postvalue) {
-		if (!isset($_POST[$postkey]) || empty($_POST[$postkey])) {
+		if ((!isset($_POST[$postkey]) || empty($_POST[$postkey])) && (!isset($_FILES[$postkey]) || empty($_FILES[$postkey]['name']))) {
 			$cffs_error->add($postkey,$postvalue);
 		}
 	}
@@ -238,6 +238,16 @@ function cffs_save_data($postdata) {
 
 	}
 	if (count($cffs_error->errors) == 0) {
+		$notify_me = get_option('admin_email');
+		$notify_me = apply_filters('cffs_set_notify_email',$notify_me);
+		$type = apply_filters('cffs_set_submission_type','post');
+		$blogname = get_option('blogname');
+		$subject = '['.$blogname.'] A new '.$type.' needs your review';
+		$message = 'A new '.$type.' titled "'.$postdata['postdata']['post_title'].'" was just submitted to '.$blogname.' by '.$current_user->user_nicename."\r\n\r\n";
+		$message .= 'To review this '.$type.' click here: '.admin_url('post.php?action=edit&post='.$post_id)."\r\n";
+		$message .= 'To review '.$current_user->user_nicename.'\'s profile click here: '.admin_url('user-edit.php?user_id='.$current_user->ID);
+		wp_mail($notify_me, $subject, $message);
+		
 		$page_url = get_option('siteurl');
 		$page_url = apply_filters('cf_form_submit_redirect',$page_url);
 		
@@ -263,6 +273,9 @@ function cffs_error_css_class($name,$error) {
 function cffs_form_element_value($name) {
 	if (isset($_POST[$name]) && !empty($_POST[$name])) {
 		return attribute_escape($_POST[$name]);
+	}
+	elseif (isset($_FILES[$name]) && is_array($_FILES[$name])) {
+		return $_FILES[$name];
 	}
 	else {
 		return null;
@@ -296,7 +309,7 @@ function cffs_cat_id_to_slug($id) {
 
 /**
  * add the user meta meta box
- */
+**/
 function cffs_add_user_metabox() {
 	global $post, $cffs_config;
 	$user_id = get_post_meta($post->ID, '_showcase_user_id', TRUE);
@@ -331,16 +344,14 @@ function cffs_add_user_metabox() {
 		$user_metabox .= '
 	</tr>';
 	}
-	$user_metabox .= '
-</table>
-<p>Click <a href="user-edit.php?user_id='.$user_id.'">here</a> to edit this information</p>';
+	$user_metabox .= '</table><p>Click <a href="user-edit.php?user_id='.$user_id.'">here</a> to edit this information</p>';
 	echo $user_metabox;
 }
 add_meta_box('usermetadiv', __('User Meta Data'), 'cffs_add_user_metabox', 'post', 'advanced', 'high');
 
 /**
  * Add fields for the user meta to be edited on the profile page
- */
+**/
 function cffs_user_form() {
 	global $cffs_config, $profileuser;
 	$user_meta_form = '<table class="form-table">';
@@ -411,7 +422,7 @@ add_filter('profile_update', 'cffs_update_user_meta');
  * 
  * @param string $name - the name of the meta field
  * @return string - the type of input field that should be used.
- */
+**/
 function cffs_decide_input_tupe($name) {
 	$name_array = explode('_', $name);
 	$type_indecator = $name_array[count($name_array)-1];
