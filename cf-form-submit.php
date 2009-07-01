@@ -34,7 +34,7 @@ jQuery(function($) {
 </script>
 		');
 	}
-	if(is_admin() && !current_user_can('edit_pages')) {
+	if(is_admin() && !current_user_can('publish_posts')) {
 		print('
 <script type="text/javascript">
 jQuery(function($) {
