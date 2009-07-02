@@ -54,10 +54,12 @@ add_action('admin_head', 'cffs_admin_head');
 
 function cffs_init() {
 	if (!defined('CF_FORM_CATEGORY_ID')) {
-		echo '<div class="error">';
-		echo '<h3>A required setting is missing:</h3>';
-		echo '<p>The Required Constant "FORM_CATEGORY_ID" is not defined.  It may be in a plugin that has not been activated.  Please activate the plugin or define the constant and try again.</p>';
-		echo '</div>';
+		echo '
+<div class="error">
+	<h3>A required setting is missing:</h3>
+	<p>The Required Constant "FORM_CATEGORY_ID" is not defined.  It may be in a plugin that has not been activated.  Please activate the plugin or define the constant and try again.</p>
+</div>
+		';
 	}
 }
 add_action('init','cffs_init');
