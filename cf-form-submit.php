@@ -19,8 +19,16 @@ if (!defined('PLUGINDIR')) {
 $cffs_error = new WP_Error;
 
 function cffs_admin_head() {
-	global $wp_version;
-	$cat_slug = cffs_cat_id_to_slug(CF_FORM_CATEGORY_ID);
+	global $wp_version, $cffs_config;
+	foreach ($cffs_config as $key => $value) {
+		if ($value['type'] == 'page') {
+			$parent_slug = get_post_field('post_slug', $value['parent_id']);
+		}	
+		else {
+			$parent_slug = cffs_cat_id_to_slug($value['parent_id']);
+		}
+	}
+	
 
 	if (isset($wp_version) && version_compare($wp_version, '2.7', '>=')) {
 		print('
