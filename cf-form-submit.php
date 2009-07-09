@@ -379,10 +379,10 @@ add_meta_box('usermetadiv', __('User Meta Data'), 'cffs_add_user_metabox', 'post
 function cffs_user_form() {
 	global $cffs_config, $profileuser;
 	foreach($cffs_config as $form_name => $form_items)	{
-		$user_meta_form = '<h3>'.$form_name.'</h3>';
+		$user_meta_form = '<h3>'.ucwords(str_ireplace('_', ' ', $form_name)).'</h3>';
 		$user_meta_form .= '<table class="form-table">';
 	
-		foreach ($form_info['items'] as $item):
+		foreach ($form_items['items'] as $item):
 			if ($item['type'] == 'user_meta'):
 				$value = get_usermeta($profileuser->ID, $item['name']);
 				$user_meta_form .= '
@@ -427,6 +427,9 @@ if (current_user_can('edit_pages')) {
 
 /**
  * process user meta submited from the profile page
+ * 
+ * @param int $user_id the user id for the user to be updated
+ * @param 
 **/
 function cffs_update_user_meta($user_id, $unused = null) {
 	global $cffs_config;
@@ -481,8 +484,9 @@ function cffs_decide_input_tupe($name) {
  * @param string $text - the name of the key that needs to be converted to a label
  * @return string $label - the lable
 **/
-function cffs_make_label($text) {
+function cffs_make_label($text, $remove = null) {
 	$label = ucwords(str_replace('_',' ',$text));
+	$label = (!empty($remove))?str_ireplace($remove, '', $label):$label;
 	return $label;
 }
 
