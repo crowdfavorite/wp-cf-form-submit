@@ -284,7 +284,12 @@ function cffs_error_css_class($name,$error) {
 	return $class;
 }
 
-
+/**
+ * prepares a value for the for the form element to display and returns it.
+ *
+ * @param string $name - the name of the form elemement
+ * @return string
+ */
 function cffs_form_element_value($name) {
 	if (isset($_POST[$name]) && !empty($_POST[$name])) {
 		return stripslashes(htmlspecialchars($_POST[$name],ENT_QUOTES));
