@@ -29,7 +29,7 @@ function cffs_admin_head() {
 			$parent_slug = $value['parent_id'];
 			$editpage = 'edit-pages.php';
 			$parentstring = 'post_parent';
-			$label_name = strtoupper(str_ireplace('_', ' ', $key));
+			$label_name = ucwords(str_ireplace('_', ' ', $key));
 		}	
 		else {
 			$parent_slug = cffs_cat_id_to_slug($value['parent_id']);
@@ -71,14 +71,15 @@ if (is_admin()) {
 add_action('admin_head', 'cffs_admin_head');
 
 function cffs_init() {
-	if (!defined('CF_FORM_CATEGORY_ID')) {
-		echo '
-<div class="error">
-	<h3>A required setting is missing:</h3>
-	<p>The Required Constant "FORM_CATEGORY_ID" is not defined.  It may be in a plugin that has not been activated.  Please activate the plugin or define the constant and try again.</p>
-</div>
-		';
-	}
+	# we need to reimplement required setting/plugins checking
+	// if (!defined('CF_FORM_CATEGORY_ID')) {
+	// 		echo '
+	// <div class="error">
+	// 	<h3>A required setting is missing:</h3>
+	// 	<p>The Required Constant "FORM_CATEGORY_ID" is not defined.  It may be in a plugin that has not been activated.  Please activate the plugin or define the constant and try again.</p>
+	// </div>
+	// 		';
+	// 	}
 }
 add_action('init','cffs_init');
 
@@ -86,7 +87,7 @@ function cffs_request_handler() {
 	global $cffs_config;
 	$cffs_config = apply_filters('cffs_add_config', $cffs_config);
 
-	if (!empty($_POST['cf_action'], $_POST['cffs_form_name'])) {
+	if (!empty($_POST['cf_action']) && !empty($_POST['cffs_form_name'])) {
 		switch ($_POST['cf_action']) {
 			case 'cffs_submit':
 				// validate the data
