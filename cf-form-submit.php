@@ -34,7 +34,7 @@ function cffs_admin_head() {
 			$label_name = ucwords(str_ireplace('_', ' ', $key));
 			$javascript_head .= '
 		jQuery(function($) {
-			$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">'.$label_name.' Pending Review</a></li>");
+			$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">Pending Review</a></li>");
 		});
 			';
 			$pagelink_set = TRUE;
