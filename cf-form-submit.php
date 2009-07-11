@@ -17,30 +17,39 @@ if (!defined('PLUGINDIR')) {
 }
 
 $cffs_error = new WP_Error;
+$valid_data;
 
 function cffs_admin_head() {
 
 	global $wp_version, $cffs_config;
-	
+	$pagelink_set = FALSE;
+	$postlink_set = FALSE;
 	$javascript_head = '
 <script type="text/javascript">'; 
 	foreach ($cffs_config as $key => $value) {
-		if ($value['type'] == 'page') {
+		if ($value['type'] == 'page' && !$pagelink_set) {
 			$parent_slug = $value['parent_id'];
 			$editpage = 'edit-pages.php';
 			$parentstring = 'post_parent';
 			$label_name = ucwords(str_ireplace('_', ' ', $key));
+			$javascript_head .= '
+		jQuery(function($) {
+			$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">'.$label_name.' Pending Review</a></li>");
+		});
+			';
+			$pagelink_set = TRUE;
 		}	
-		else {
+		elseif($value['type'] == 'post' && !$postlink_set) {
 			$parent_slug = cffs_cat_id_to_slug($value['parent_id']);
 			$editpage = 'edit.php';
 			$parentstring = 'category_name';
+			$javascript_head .= '
+		jQuery(function($) {
+			$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">'.$label_name.' Pending Review</a></li>");
+		});
+			';
+			$postlink_set = TRUE;
 		}
-		$javascript_head .= '
-	jQuery(function($) {
-		$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">'.$label_name.' Pending Review</a></li>");
-	});
-		';
 	}
 	$javascript_head .= '
 	jQuery(function($) {
@@ -84,7 +93,7 @@ function cffs_init() {
 add_action('init','cffs_init');
 
 function cffs_request_handler() {
-	global $cffs_config;
+	global $cffs_config, $valid_data;
 	$cffs_config = apply_filters('cffs_add_config', $cffs_config);
 
 	if (!empty($_POST['cf_action']) && !empty($_POST['cffs_form_name'])) {
@@ -140,21 +149,6 @@ function cffs_validate_data() {
 			$image_id = cffs_process_image($_FILES[$item['name']]);
 			$data[$item['type']][$item['name']] = $image_id;
 		}
-		// We may not need these here...
-		// if ($item['type'] == 'postdata') {
-		// 	$data['postdata'][$item['name']] = stripslashes($_POST[$item['name']]);
-		// }
-		// switch ($item['type']) {
-		// 	case 'postdata':
-		// 		$data['postdata'][$item['name']] = stripslashes($_POST[$item['name']]);
-		// 		break;
-		// 	case 'post_meta':
-		// 		break;
-		//  case 'user_meta':
-		//  	break;
-		// 	default:
-		// 		break;
-		// }
 	}
 
 	if (count($cffs_error->errors) > 0) {
@@ -243,14 +237,6 @@ function cffs_save_data($postdata) {
 				update_usermeta($current_user->ID, $key, $value);
 			}
 		}
-		if (isset($postdata['post_meta']) && is_array($postdata['post_meta'])) {
-			foreach ($postdata['post_meta'] as $key => $value) {
-				if (!add_post_meta($post_id,$key,$value)) {
-					$cffs_error->add($key.'-not-saved',"Unable to save $key");
-				}
-			}
-		}
-
 	}
 	if (count($cffs_error->errors) == 0) {
 		$notify_me = get_option('admin_email');
@@ -272,6 +258,18 @@ function cffs_save_data($postdata) {
 	
 	
 }
+
+function cffs_save_post_meta($post_ID){
+	global $valid_data;
+	if (isset($valid_data['post_meta']) && is_array($valid_data['post_meta'])) {
+		foreach ($valid_data['post_meta'] as $key => $value) {
+			if (!add_post_meta($post_ID,$key,$value)) {
+				$cffs_error->add($key.'-not-saved',"Unable to save $key");
+			}
+		}
+	}
+}
+add_action('save_post','cffs_save_post_meta');
 
 function cffs_error_css_class($name,$error) {
 	
