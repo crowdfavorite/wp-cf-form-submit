@@ -121,7 +121,9 @@ function cffs_run_post_meta($val) {
 add_filter('cf_meta_actions', 'cffs_run_post_meta', 10);
 
 /**
- * @todo implement more explicit validation based on configs
+ * Validates data and asigns it to the data array
+ * 
+ * @return array $data contains arrays of postdata, post_meta and user_meta
 **/
 function cffs_validate_data() {
 	global $cffs_error, $cffs_config;
@@ -138,12 +140,24 @@ function cffs_validate_data() {
 			$data[$item['type']][$item['name']] = stripslashes(attribute_escape($_POST[$item['name']]));
 		}
 		elseif ($item['data_type'] == 'block' && isset($_POST['blocks'][$item['name']])) {			
-			foreach ($_POST['blocks'][$item['name']] as $block_item) {
-				$allowed_fields = array_keys($item['items']);
-				if (in_array($block_item, $allowed_fields)) {
-					$data[$item['type']][$item['name']][][$children_name] = stripslashes(attribute_escape($block_item));
+
+			foreach ($_POST['blocks'][$item['name']] as $value) {
+				// keep items where all values are empty from being saved
+				$control = '';
+				foreach($value as $value_item) { $control .= $value_item; }
+				
+				if(strlen(trim($control)) > 0) { 
+					$data[$item['type']][$item['name']][] = $value;
 				}
 			}
+			
+			// foreach ($_POST['blocks'][$item['name']] as $block_item) {
+			// 	$allowed_fields = array_keys($item['items']);
+			// 	if (in_array($block_item, $allowed_fields)) {
+			// 		
+			// 		$data[$item['type']][$item['name']][][$children_name] = stripslashes(attribute_escape($block_item));
+			// 	}
+			// }
 		}
 		elseif (isset($_FILES[$item['name']]) && $_FILES[$item['name']]['size'] > 0 && $_FILES[$item['name']]['temp_name'] != 'none') {
 			$image_id = cffs_process_image($_FILES[$item['name']]);
@@ -262,6 +276,7 @@ function cffs_save_data($postdata) {
 function cffs_save_post_meta($post_ID){
 	global $valid_data;
 	if (isset($valid_data['post_meta']) && is_array($valid_data['post_meta'])) {
+				
 		foreach ($valid_data['post_meta'] as $key => $value) {
 			if (!add_post_meta($post_ID,$key,$value)) {
 				$cffs_error->add($key.'-not-saved',"Unable to save $key");
