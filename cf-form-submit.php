@@ -273,8 +273,11 @@ function cffs_save_data($postdata) {
 	
 }
 
-function cffs_save_post_meta($post_ID){
+function cffs_save_post_meta($post_ID, $data = ''){
 	global $valid_data;
+	if (!empty($data)) {
+		$valid_data = $data;
+	}
 	if (isset($valid_data['post_meta']) && is_array($valid_data['post_meta'])) {
 				
 		foreach ($valid_data['post_meta'] as $key => $value) {
