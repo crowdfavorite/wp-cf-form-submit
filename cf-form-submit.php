@@ -132,8 +132,31 @@ function cffs_validate_data() {
 	$data = apply_filters('cffs_filter_postdata',$data);
 
 	foreach ($cffs_config[$_POST['cffs_form_name']]['items'] as $item) {
-		if ($item['required'] && (!isset($_POST[$item['name']]) || empty($_POST[$item['name']])) && (!isset($_FILES[$item['name']]) || empty($_FILES[$item['name']]['name']))) {
-			$cffs_error->add($item['name'],$item['error_message']);
+		if (isset($item['required']) && !empty($item['required'])) {
+			if (!is_array($item['required'])) {
+				// only one item now, but we may find othe common, simple validation situations
+				switch ($item['required']) {
+					// simply tests that a value was entered.
+					case 'present':
+						if((!isset($_POST[$item['name']]) || empty($_POST[$item['name']])) && (!isset($_FILES[$item['name']]) || empty($_FILES[$item['name']]['name']))) {
+							$cffs_error->add($item['name'],$item['error_message']);
+						}
+						break;
+				}
+			}
+			else {
+				$data = $_POST;
+				if (isset($item['required']['args']) && is_array($item['required']['args'])) {
+					$data['args'] = $item['required']['args'];
+				}
+				// $error code not yet implemented, but in future will be.
+				list($result,$error_code,$error_message) = $item['required']['callback']($data);
+				if ($result === FALSE) {
+					$cffs_error->add($item['name'],$error_message);
+				}
+			}
+			
+			
 		}
 
 		if (isset($_POST[$item['name']]) && !empty($_POST[$item['name']])) {
