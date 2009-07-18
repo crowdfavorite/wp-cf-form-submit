@@ -145,20 +145,17 @@ function cffs_validate_data() {
 				}
 			}
 			else {
-				$data = $_POST;
+				$validation_data = $_POST;
 				if (isset($item['required']['args']) && is_array($item['required']['args'])) {
-					$data['args'] = $item['required']['args'];
+					$validation_data['args'] = $item['required']['args'];
 				}
 				// $error code not yet implemented, but in future will be.
-				list($result,$error_code,$error_message) = $item['required']['callback']($data);
+				list($result,$error_code,$error_message) = $item['required']['callback']($validation_data);
 				if ($result === FALSE) {
 					$cffs_error->add($item['name'],$error_message);
 				}
-			}
-			
-			
+			}			
 		}
-
 		if (isset($_POST[$item['name']]) && !empty($_POST[$item['name']])) {
 			$data[$item['type']][$item['name']] = stripslashes(attribute_escape($_POST[$item['name']]));
 		}
@@ -187,7 +184,7 @@ function cffs_validate_data() {
 			$data[$item['type']][$item['name']] = $image_id;
 		}
 	}
-
+	
 	if (count($cffs_error->errors) > 0) {
 		return false;
 	}
@@ -262,6 +259,7 @@ function cffs_save_data($postdata) {
 		kses_init_filters();
 
 	}
+	
 	$post_id = wp_insert_post($postdata['postdata']);
 
 	if (!$post_id) {
