@@ -3,7 +3,7 @@
 Plugin Name: CF Form Submit 
 Plugin URI: http://crowdfavorite.com 
 Description: Allows the processing of forms, utilizing such things as cf_post_meta 
-Version: 0.7 
+Version: 1.2
 Author: Crowd Favorite
 Author URI: http://crowdfavorite.com
 */
@@ -91,6 +91,17 @@ function cffs_init() {
 	// 	}
 }
 add_action('init','cffs_init');
+
+function cffs_set_config() {
+	global $cffs_config;
+	$cffs_config = apply_filters('cffs_add_config', array());
+}
+add_action('init', 'cffs_set_config', 1);
+
+function cffs_get_config() {
+	global $cffs_config;
+	return $cffs_config;
+}
 
 function cffs_request_handler() {
 	global $cffs_config, $valid_data;
