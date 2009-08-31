@@ -21,34 +21,37 @@ $valid_data;
 
 function cffs_admin_head() {
 
-	global $wp_version, $cffs_config;
+	global $wp_version;
+	$cffs_config = cffs_get_config();
 	$pagelink_set = FALSE;
 	$postlink_set = FALSE;
 	$javascript_head = '
-<script type="text/javascript">'; 
-	foreach ($cffs_config as $key => $value) {
-		if ($value['type'] == 'page' && !$pagelink_set) {
-			$parent_slug = $value['parent_id'];
-			$editpage = 'edit-pages.php';
-			$parentstring = 'post_parent';
-			$label_name = ucwords(str_ireplace('_', ' ', $key));
-			$javascript_head .= '
-		jQuery(function($) {
-			$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">Pending Review</a></li>");
-		});
-			';
-			$pagelink_set = TRUE;
-		}	
-		elseif($value['type'] == 'post' && !$postlink_set) {
-			$parent_slug = cffs_cat_id_to_slug($value['parent_id']);
-			$editpage = 'edit.php';
-			$parentstring = 'category_name';
-			$javascript_head .= '
-		jQuery(function($) {
-			$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">'.$label_name.' Pending Review</a></li>");
-		});
-			';
-			$postlink_set = TRUE;
+<script type="text/javascript">';
+	if (count($cffs_config)) {
+		foreach ($cffs_config as $key => $value) {
+			if ($value['type'] == 'page' && !$pagelink_set) {
+				$parent_slug = $value['parent_id'];
+				$editpage = 'edit-pages.php';
+				$parentstring = 'post_parent';
+				$label_name = ucwords(str_ireplace('_', ' ', $key));
+				$javascript_head .= '
+			jQuery(function($) {
+				$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">Pending Review</a></li>");
+			});
+				';
+				$pagelink_set = TRUE;
+			}	
+			elseif($value['type'] == 'post' && !$postlink_set) {
+				$parent_slug = cffs_cat_id_to_slug($value['parent_id']);
+				$editpage = 'edit.php';
+				$parentstring = 'category_name';
+				$javascript_head .= '
+			jQuery(function($) {
+				$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">'.$label_name.' Pending Review</a></li>");
+			});
+				';
+				$postlink_set = TRUE;
+			}
 		}
 	}
 	$javascript_head .= '
@@ -104,8 +107,7 @@ function cffs_get_config() {
 }
 
 function cffs_request_handler() {
-	global $cffs_config, $valid_data;
-	$cffs_config = apply_filters('cffs_add_config', $cffs_config);
+	global $valid_data;
 
 	if (!empty($_POST['cf_action']) && !empty($_POST['cffs_form_name'])) {
 		switch ($_POST['cf_action']) {
@@ -137,11 +139,13 @@ add_filter('cf_meta_actions', 'cffs_run_post_meta', 10);
  * @return array $data contains arrays of postdata, post_meta and user_meta
 **/
 function cffs_validate_data() {
-	global $cffs_error, $cffs_config;
+	global $cffs_error;
+	$cffs_config = cffs_get_config();
 	$cffs_allowed_postdata = apply_filters('cffs_get_postdata_fields',array('post_title','post_content'));
 	$data = array();
 	$data = apply_filters('cffs_filter_postdata',$data);
 
+// TODO - error handling if POST doesn't have expected data
 	foreach ($cffs_config[$_POST['cffs_form_name']]['items'] as $item) {
 		if (isset($item['required']) && !empty($item['required'])) {
 			if (!is_array($item['required'])) {
@@ -379,43 +383,47 @@ function cffs_cat_id_to_slug($id) {
  * add the user meta meta box
 **/
 function cffs_add_user_metabox() {
-	global $post, $cffs_config;
-	foreach ($cffs_config as $form_name => $form_info) {
-		$user_id = get_post_meta($post->ID, '_showcase_user_id', TRUE);
-		$user_metabox = '<h3>'.$form_name.'</h3>';
-		$user_metabox .= '<table class="form-table">';
-	
-		foreach ($form_info['items'] as $item) { 
-			if($item['type'] == 'user_meta') {
-				$key_label = cffs_make_label($item['name']);
-				$metavalue = get_usermeta($user_id, $item['name']);
-				$user_metabox .= '
-		<tr>
-			<th>'.$key_label.'</th>';
+	global $post;
+	$cffs_config = cffs_get_config();
+	$user_metabox = '';
+	if (count($cffs_config)) {
+		foreach ($cffs_config as $form_name => $form_info) {
+			$user_id = get_post_meta($post->ID, '_showcase_user_id', TRUE);
+			$user_metabox = '<h3>'.$form_name.'</h3>';
+			$user_metabox .= '<table class="form-table">';
 		
-				switch ($item['data_type']) {
+			foreach ($form_info['items'] as $item) { 
+				if($item['type'] == 'user_meta') {
+					$key_label = cffs_make_label($item['name']);
+					$metavalue = get_usermeta($user_id, $item['name']);
+					$user_metabox .= '
+			<tr>
+				<th>'.$key_label.'</th>';
 			
-					case 'image':
-						$user_metabox .= '
-			<td>'.cffs_user_img_tag($user_id, 'logo', $key).'</td>';
-		
-						break;
-					case 'link':
-						$user_metabox .= '
-			<td><a href="'.$metavalue.'">'.$metavalue.'</a></td>';
-						break;
+					switch ($item['data_type']) {
 				
-					default:
-						$user_metabox .= '
-			<td>'.$metavalue.'</td>';
-		
-						break;
-		 		}
-				$user_metabox .= '
-		</tr>';
+						case 'image':
+							$user_metabox .= '
+				<td>'.cffs_user_img_tag($user_id, 'logo', $key).'</td>';
+			
+							break;
+						case 'link':
+							$user_metabox .= '
+				<td><a href="'.$metavalue.'">'.$metavalue.'</a></td>';
+							break;
+					
+						default:
+							$user_metabox .= '
+				<td>'.$metavalue.'</td>';
+			
+							break;
+					}
+					$user_metabox .= '
+			</tr>';
+				}
 			}
+			$user_metabox .= '</table><p>Click <a href="user-edit.php?user_id='.$user_id.'">here</a> to edit this information</p>';
 		}
-		$user_metabox .= '</table><p>Click <a href="user-edit.php?user_id='.$user_id.'">here</a> to edit this information</p>';
 	}
 	echo $user_metabox;
 }
@@ -425,45 +433,48 @@ add_meta_box('usermetadiv', __('User Meta Data'), 'cffs_add_user_metabox', 'post
  * Add fields for the user meta to be edited on the profile page
 **/
 function cffs_user_form() {
-	global $cffs_config, $profileuser;
-	foreach($cffs_config as $form_name => $form_items)	{
-		$user_meta_form = '<h3>'.ucwords(str_ireplace('_', ' ', $form_name)).'</h3>';
-		$user_meta_form .= '<table class="form-table">';
+	global $profileuser;
+	$cffs_config = cffs_get_config();
+	if (count($cffs_config)) {
+		foreach ($cffs_config as $form_name => $form_items)	{
+			$user_meta_form = '<h3>'.ucwords(str_ireplace('_', ' ', $form_name)).'</h3>';
+			$user_meta_form .= '<table class="form-table">';
+		
+			foreach ($form_items['items'] as $item):
+				if ($item['type'] == 'user_meta'):
+					$value = get_usermeta($profileuser->ID, $item['name']);
+					$user_meta_form .= '
+			<tr>
+				<th>
+					<label for="'.$item['name'].'">'.cffs_make_label($item['name']).'</label>
+				</th>';
 	
-		foreach ($form_items['items'] as $item):
-			if ($item['type'] == 'user_meta'):
-				$value = get_usermeta($profileuser->ID, $item['name']);
-				$user_meta_form .= '
-		<tr>
-			<th>
-				<label for="'.$item['name'].'">'.cffs_make_label($item['name']).'</label>
-			</th>';
-
-				switch ($item['data_type']):
-					case 'image':
-						$user_meta_form .= '
-			<td>
-				<p>'.cffs_user_img_tag($profileuser->ID, 'logo', $item['name']).'</p>
-				<input type="file" name="'.$item['name'].'" value="" id="'.$item['name'].'">
-			</td>';
-						break;
-					case 'link':
-					case 'text':
-						$user_meta_form .= '
-			<td><input type="text" name="'.$item['name'].'" value="'.$value.'" id="'.$item['name'].'"></td>';
-						break;
-					case 'textarea':
-						$user_meta_form .= '
-			<td>
-				<textarea name="'.$item['name'].'">'.$value.'</textarea>
-			</td>';
-						break;
-				endswitch;
-				$user_meta_form .= '
-		</tr>';
-			endif;
-		endforeach;
-		$user_meta_form .= '</table>';
+					switch ($item['data_type']):
+						case 'image':
+							$user_meta_form .= '
+				<td>
+					<p>'.cffs_user_img_tag($profileuser->ID, 'logo', $item['name']).'</p>
+					<input type="file" name="'.$item['name'].'" value="" id="'.$item['name'].'">
+				</td>';
+							break;
+						case 'link':
+						case 'text':
+							$user_meta_form .= '
+				<td><input type="text" name="'.$item['name'].'" value="'.$value.'" id="'.$item['name'].'"></td>';
+							break;
+						case 'textarea':
+							$user_meta_form .= '
+				<td>
+					<textarea name="'.$item['name'].'">'.$value.'</textarea>
+				</td>';
+							break;
+					endswitch;
+					$user_meta_form .= '
+			</tr>';
+				endif;
+			endforeach;
+			$user_meta_form .= '</table>';
+		}
 	}
 	echo $user_meta_form;
 }
@@ -480,16 +491,18 @@ if (current_user_can('edit_pages')) {
  * @param 
 **/
 function cffs_update_user_meta($user_id, $unused = null) {
-	global $cffs_config;
-	foreach ($cffs_config as $form_name => $form_info){
-		foreach ($form_info['items'] as $item) {
-			if ($item['type'] == 'user_meta'){
-				if ($item['data_type'] == 'image') {
-					$_POST[$item['name']] = cffs_process_image($_FILES[$item['name']]);
-				}
-				if (isset($_POST[$item['name']])) {
-					$data = trim(stripslashes($_POST[$item['name']]));
-					update_usermeta($user_id, $item['name'], $data);
+	$cffs_config = cffs_get_config();
+	if (count($cffs_config)) {
+		foreach ($cffs_config as $form_name => $form_info) {
+			foreach ($form_info['items'] as $item) {
+				if ($item['type'] == 'user_meta'){
+					if ($item['data_type'] == 'image') {
+						$_POST[$item['name']] = cffs_process_image($_FILES[$item['name']]);
+					}
+					if (isset($_POST[$item['name']])) {
+						$data = trim(stripslashes($_POST[$item['name']]));
+						update_usermeta($user_id, $item['name'], $data);
+					}
 				}
 			}
 		}
