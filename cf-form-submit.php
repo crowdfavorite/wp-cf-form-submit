@@ -12,6 +12,7 @@ Author URI: http://crowdfavorite.com
 
 require_once(ABSPATH . 'wp-admin/includes/admin.php');
 require_once(ABSPATH . 'wp-includes/pluggable.php');
+
 if (!defined('PLUGINDIR')) {
 	define('PLUGINDIR','wp-content/plugins');
 }
@@ -20,7 +21,6 @@ $cffs_error = new WP_Error;
 $valid_data;
 
 function cffs_admin_head() {
-
 	global $wp_version;
 	$cffs_config = cffs_get_config();
 	$pagelink_set = FALSE;
@@ -41,7 +41,7 @@ function cffs_admin_head() {
 				';
 				$pagelink_set = TRUE;
 			}	
-			elseif($value['type'] == 'post' && !$postlink_set) {
+			else if ($value['type'] == 'post' && !$postlink_set) {
 				$parent_slug = cffs_cat_id_to_slug($value['parent_id']);
 				$editpage = 'edit.php';
 				$parentstring = 'category_name';
@@ -126,10 +126,11 @@ add_action('init', 'cffs_request_handler', 11);
 // activate the post meta plugin for use outside of the admin interface
 function cffs_run_post_meta($val) {
 	if (isset($_POST['cf_action']) && $_POST['cf_action'] == 'cffs_submit') {
-		
 		return true;
 	}
-	return $val;
+	else {
+		return $val;
+	}
 }
 add_filter('cf_meta_actions', 'cffs_run_post_meta', 10);
 
@@ -270,9 +271,7 @@ function cffs_save_data($postdata) {
 	global $current_user, $cffs_error;
 	
 	if (function_exists('kses_init_filters')) {
-
 		kses_init_filters();
-
 	}
 	
 	$post_id = wp_insert_post($postdata['postdata']);
@@ -280,12 +279,9 @@ function cffs_save_data($postdata) {
 	if (!$post_id) {
 		$cffs_error->add("post-not-saved","An unknown error prevented your Submission, please try again.");
 	}
-	else {
-
-		if (isset($postdata['user_meta']) && is_array($postdata['user_meta'])) {
-			foreach ($postdata['user_meta'] as $key => $value) {
-				update_usermeta($current_user->ID, $key, $value);
-			}
+	else if (isset($postdata['user_meta']) && is_array($postdata['user_meta']) && count($postdata['user_meta'])) {
+		foreach ($postdata['user_meta'] as $key => $value) {
+			update_usermeta($current_user->ID, $key, $value);
 		}
 	}
 	if (count($cffs_error->errors) == 0) {
@@ -299,14 +295,11 @@ function cffs_save_data($postdata) {
 		$message .= 'To review '.$current_user->user_nicename.'\'s profile click here: '.admin_url('user-edit.php?user_id='.$current_user->ID);
 		wp_mail($notify_me, $subject, $message);
 		
-		$page_url = get_option('siteurl');
-		$page_url = apply_filters('cf_form_submit_redirect',$page_url);
+		$page_url = apply_filters('cf_form_submit_redirect', get_option('siteurl'), $post_id);
 		
 		wp_redirect($page_url);
 		die();
 	}
-	
-	
 }
 
 function cffs_save_post_meta($post_ID, $data = ''){
@@ -314,8 +307,7 @@ function cffs_save_post_meta($post_ID, $data = ''){
 	if (!empty($data)) {
 		$valid_data = $data;
 	}
-	if (isset($valid_data['post_meta']) && is_array($valid_data['post_meta'])) {
-				
+	if (isset($valid_data['post_meta']) && is_array($valid_data['post_meta']) && count($valid_data['post_meta'])) {
 		foreach ($valid_data['post_meta'] as $key => $value) {
 			if (!add_post_meta($post_ID,$key,$value)) {
 				$cffs_error->add($key.'-not-saved',"Unable to save $key");
@@ -326,13 +318,10 @@ function cffs_save_post_meta($post_ID, $data = ''){
 add_action('save_post','cffs_save_post_meta');
 
 function cffs_error_css_class($name,$error) {
-	
+	$class = '';
 	if (in_array($name,$error->get_error_codes())) {
 		$class = ' class="error"';
-		return $class;
 	}
-
-	$class = '';
 	return $class;
 }
 
@@ -346,7 +335,7 @@ function cffs_form_element_value($name) {
 	if (isset($_POST[$name]) && !empty($_POST[$name])) {
 		return stripslashes(htmlspecialchars($_POST[$name],ENT_QUOTES));
 	}
-	elseif (isset($_FILES[$name]) && is_array($_FILES[$name])) {
+	else if (isset($_FILES[$name]) && is_array($_FILES[$name])) {
 		return $_FILES[$name];
 	}
 	else {
@@ -359,16 +348,14 @@ function cffs_form_element_value($name) {
  * post or page
 **/
 function cffs_user_img_tag($user_id, $size = 'thumbnail', $user_meta) {
-
 	$attachment_id = get_user_option($user_meta, $user_id);
-
 	$cffs_image = wp_get_attachment_image_src($attachment_id, $size);
-	
 	if ($cffs_image[0] != '') {
 		return '<img src="'.$cffs_image[0].'" alt="Logo for: '.$user_id.'" />';
 	}
-
-	return '';
+	else {
+		return '';
+	}
 }
 
 /**
@@ -534,7 +521,6 @@ function cffs_decide_input_tupe($name) {
 			$type = 'text';
 			break;
 	}
-	
 	return $type;
 }
 
