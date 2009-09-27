@@ -216,6 +216,10 @@ function cffs_process_image($image) {
 	global $cffs_error;
 	// @todo failier handling needs to be implemented.
 	$uploaddir = wp_upload_dir();
+	if (!empty($uploaddir['error'])) {
+		$cffs_error->add('image-not-saved', $uploaddir['error']);
+		return false;
+	}
 	$file = str_replace(' ', '-', $image['name']);
 	$post_date = date('Y-m-d 00:00:00');
 	$postdata = array(
@@ -228,13 +232,10 @@ function cffs_process_image($image) {
 		'guid' => $uploaddir['url'].'/'.$file,
 		'post_mime_type' => $image['type'],			
 	);
-	
 	$filename = $uploaddir['path'].'/'.$file;
-	
 	$attachment_id = cffs_save_image($image['tmp_name'], $filename, $postdata);
-	
 	if (!$attachment_id) {
-		$cffs_error->add('image-not-saved', 'Unfortunately your image, '.$image['name'].', could not be saved.');
+		$cffs_error->add('image-not-saved', 'Unfortunately your image, '.esc_html($image['name']).', could not be saved.');
 	}
 	else {
 		// return the attachement id so that it can be used by cffp.
@@ -249,9 +250,8 @@ function cffs_process_image($image) {
 **/
 function cffs_save_image($tmpname, $filename, $postdata) {
 	global $cffs_error;
-	// If the file is successfully moved, add it and it's meta data
-	if(move_uploaded_file($tmpname, $filename)){
-		
+	// If the file is successfully moved, add it and its meta data
+	if (move_uploaded_file($tmpname, $filename)) {
 		$attachment_id = wp_insert_attachment($postdata, $filename, 0);	
 		$attachment_data = wp_generate_attachment_metadata($attachment_id, $filename);
 		if (wp_update_attachment_metadata($attachment_id, $attachment_data)) {
