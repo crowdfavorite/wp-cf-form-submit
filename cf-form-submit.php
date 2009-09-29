@@ -250,7 +250,7 @@ function cffs_process_image($image) {
 function cffs_save_image($tmpname, $filename, $postdata) {
 	global $cffs_error;
 	// If the file is successfully moved, add it and its meta data
-	if (move_uploaded_file($tmpname, $filename)) {
+	if (strpos($filename, ABSPATH) && move_uploaded_file($tmpname, $filename)) {
 		$attachment_id = wp_insert_attachment($postdata, $filename, 0);	
 		$attachment_data = wp_generate_attachment_metadata($attachment_id, $filename);
 		if (wp_update_attachment_metadata($attachment_id, $attachment_data)) {
