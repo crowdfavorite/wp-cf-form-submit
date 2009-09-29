@@ -115,7 +115,6 @@ function cffs_request_handler() {
 				// validate the data
 				if ($valid_data = cffs_validate_data()) {
 					cffs_save_data($valid_data);
-					echo "<h3>We have reached the Save function successfully</h3>";
 				}
 				break;
 		}
@@ -251,23 +250,18 @@ function cffs_process_image($image) {
 function cffs_save_image($tmpname, $filename, $postdata) {
 	global $cffs_error;
 	// If the file is successfully moved, add it and its meta data
-	if (strpos($filename, ABSPATH)) {
-		if (@move_uploaded_file($tmpname, $filename)) {
-			$attachment_id = wp_insert_attachment($postdata, $filename, 0);	
-			$attachment_data = wp_generate_attachment_metadata($attachment_id, $filename);
-			if (wp_update_attachment_metadata($attachment_id, $attachment_data)) {
-				return $attachment_id;
-			}
-			else {
-				$cffs_error->add('media-not-inserted', 'We were unable to add your image to the media Library');
-			}
+	if (move_uploaded_file($tmpname, $filename)) {
+		$attachment_id = wp_insert_attachment($postdata, $filename, 0);	
+		$attachment_data = wp_generate_attachment_metadata($attachment_id, $filename);
+		if (wp_update_attachment_metadata($attachment_id, $attachment_data)) {
+			return $attachment_id;
 		}
 		else {
-			$cffs_error->add('image-not-moved', 'We were unable to move your image to the upload directory');
+			$cffs_error->add('media-not-inserted', 'We were unable to add your image to the media Library');
 		}
 	}
 	else {
-		$cffs_error->add('image-path-invalid', 'The upload path provided was invalid.  If this problem persists, please contact the system administrator');
+		$cffs_error->add('image-not-moved', 'We were unable to move your image to the upload directory');
 	}
 }
 
