@@ -267,21 +267,18 @@ function cffs_save_image($tmpname, $filename, $postdata) {
 }
 
 function cffs_save_data($postdata) {
-
 	global $current_user, $cffs_error;
 	
 	if (function_exists('kses_init_filters')) {
 		kses_init_filters();
 	}
-	
 	$post_id = wp_insert_post($postdata['postdata']);
-
 	if (!$post_id) {
 		$cffs_error->add("post-not-saved","An unknown error prevented your Submission, please try again.");
 	}
 	else if (isset($postdata['user_meta']) && is_array($postdata['user_meta']) && count($postdata['user_meta'])) {
 		foreach ($postdata['user_meta'] as $key => $value) {
-			update_usermeta($current_user->ID, $key, $value);
+			update_usermeta($current_user->ID, wp_filter_nohtml_kses($key), wp_filter_post_kses($value));
 		}
 	}
 	if (count($cffs_error->errors) == 0) {
@@ -309,8 +306,8 @@ function cffs_save_post_meta($post_ID, $data = ''){
 	}
 	if (isset($valid_data['post_meta']) && is_array($valid_data['post_meta']) && count($valid_data['post_meta'])) {
 		foreach ($valid_data['post_meta'] as $key => $value) {
-			if (!add_post_meta($post_ID,$key,$value)) {
-				$cffs_error->add($key.'-not-saved',"Unable to save $key");
+			if (!add_post_meta($post_ID, wp_filter_nohtml_kses($key), wp_filter_post_kses($value))) {
+				$cffs_error->add($key.'-not-saved', "Unable to save $key");
 			}
 		}
 	}
