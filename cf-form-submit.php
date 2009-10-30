@@ -3,7 +3,7 @@
 Plugin Name: CF Form Submit 
 Plugin URI: http://crowdfavorite.com 
 Description: Allows the processing of forms, utilizing such things as cf_post_meta 
-Version: 1.3
+Version: 1.3.1
 Author: Crowd Favorite
 Author URI: http://crowdfavorite.com
 */
@@ -306,13 +306,35 @@ function cffs_save_post_meta($post_ID, $data = ''){
 	}
 	if (isset($valid_data['post_meta']) && is_array($valid_data['post_meta']) && count($valid_data['post_meta'])) {
 		foreach ($valid_data['post_meta'] as $key => $value) {
-			if (!add_post_meta($post_ID, wp_filter_nohtml_kses($key), wp_filter_post_kses($value))) {
+			if (is_array($value)) {
+				$value = cffs_kses_filter_array($value);
+			}
+			else {
+				$value = wp_filter_post_kses($value);
+			}
+			if (!add_post_meta($post_ID, wp_filter_nohtml_kses($key), $value)) {
 				$cffs_error->add($key.'-not-saved', "Unable to save $key");
 			}
 		}
 	}
 }
-add_action('save_post','cffs_save_post_meta');
+add_action('save_post', 'cffs_save_post_meta');
+
+function cffs_kses_filter_array($data) {
+	$sanitized = array();
+	if (count($data)) {
+		foreach ($data as $k => $v) {
+			if (is_array($v)) {
+				$v = cffs_kses_filter_array($v);
+			}
+			else {
+				$v = wp_filter_post_kses($v);
+			}
+			$sanitized[wp_filter_nohtml_kses($k)] = $v;
+		}
+	}
+	return $sanitized;
+}
 
 function cffs_error_css_class($name,$error) {
 	$class = '';
