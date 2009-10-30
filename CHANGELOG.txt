@@ -1,5 +1,10 @@
 # CF-Form-Submit Changelog
 
+## 1.3
+- added KSES filtering for security (fixed XSS vulnerability)
+
+(what happened to 1.1 and 1.2?)
+
 ## 1.0.1
 - fixed error handling for missing required settings/plugins
 
