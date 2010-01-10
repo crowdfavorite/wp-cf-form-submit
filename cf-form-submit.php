@@ -141,11 +141,21 @@ add_filter('cf_meta_actions', 'cffs_run_post_meta', 10);
 function cffs_validate_data() {
 	global $cffs_error;
 	$cffs_config = cffs_get_config();
-	$cffs_allowed_postdata = apply_filters('cffs_get_postdata_fields',array('post_title','post_content'));
-	$data = array();
-	$data = apply_filters('cffs_filter_postdata',$data);
+	$cffs_allowed_postdata = apply_filters(
+		'cffs_get_postdata_fields',
+		array(
+			'post_title',
+			'post_content'
+		)
+	);
+	$data = apply_filters('cffs_filter_postdata', array());
 
 // TODO - error handling if POST doesn't have expected data
+
+	if (!isset($cffs_config[$_POST['cffs_form_name']])) {
+		return false;
+	}
+
 	foreach ($cffs_config[$_POST['cffs_form_name']]['items'] as $item) {
 		if (isset($item['required']) && !empty($item['required'])) {
 			if (!is_array($item['required'])) {
