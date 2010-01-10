@@ -1,4 +1,4 @@
-# CF-Form-Submit Changelog
+# CF Form Submit Changelog
 
 ## 1.3.1
 - fixed KSES filtering to account for Arrays properly
@@ -7,6 +7,9 @@
 - added KSES filtering for security (fixed XSS vulnerability)
 
 (what happened to 1.1 and 1.2?)
+
+## 1.0.2
+- fixed exposing file paths on error
 
 ## 1.0.1
 - fixed error handling for missing required settings/plugins
