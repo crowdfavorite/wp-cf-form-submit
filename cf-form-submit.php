@@ -3,7 +3,7 @@
 Plugin Name: CF Form Submit 
 Plugin URI: http://crowdfavorite.com 
 Description: Allows the processing of forms, utilizing such things as cf_post_meta 
-Version: 0.7 
+Version: 1.0.2 
 Author: Crowd Favorite
 Author URI: http://crowdfavorite.com
 */
@@ -172,7 +172,7 @@ function cffs_process_image($image) {
 	);
 	
 	$filename = $uploaddir['path'].'/'.$file;
-	
+
 	$attachment_id = cffs_save_image($image['tmp_name'], $filename, $postdata);
 	
 	if (!$attachment_id) {
@@ -192,20 +192,21 @@ function cffs_process_image($image) {
 function cffs_save_image($tmpname, $filename, $postdata) {
 	global $cffs_error;
 	// If the file is successfully moved, add it and it's meta data
-	if(move_uploaded_file($tmpname, $filename)){
-		
+	if (@move_uploaded_file($tmpname, $filename)) {
 		$attachment_id = wp_insert_attachment($postdata, $filename, 0);	
 		$attachment_data = wp_generate_attachment_metadata($attachment_id, $filename);
 		if (wp_update_attachment_metadata($attachment_id, $attachment_data)) {
 			return $attachment_id;
 		}
-		else {
-			$cffs_error->add('media-not-inserted', 'We were unable to add your image to the media Library');
-		}
+// errors are being double reported
+// 		else {
+// 			$cffs_error->add('media-not-inserted', 'We were unable to add your image to the media Library');
+// 		}
 	}
-	else {
-		$cffs_error->add('image-not-moved', 'We were unable to move your image to the upload directory');
-	}
+// 	else {
+// 		$cffs_error->add('image-not-moved', 'We were unable to move your image to the upload directory');
+// 	}
+	return false;
 }
 
 function cffs_save_data($postdata) {
