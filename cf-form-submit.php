@@ -10,8 +10,8 @@ Author URI: http://crowdfavorite.com
 
 // ini_set('display_errors', '1'); ini_set('error_reporting', E_ALL);
 
-require_once(ABSPATH . 'wp-admin/includes/admin.php');
 require_once(ABSPATH . 'wp-includes/pluggable.php');
+require_once(ABSPATH . 'wp-admin/includes/admin.php');
 
 if (!defined('PLUGINDIR')) {
 	define('PLUGINDIR','wp-content/plugins');
@@ -82,7 +82,13 @@ if (is_admin()) {
 }
 add_action('admin_head', 'cffs_admin_head');
 
+$cffs_page_to_edit = null;
+
 function cffs_init() {
+	global $cffs_page_to_edit;
+	if (!empty($_REQUEST['cffs_page_to_edit'])) {
+		$cffs_page_to_edit = $_REQUEST['cffs_page_to_edit'];
+	}
 	# we need to reimplement required setting/plugins checking
 	// if (!defined('CF_FORM_CATEGORY_ID')) {
 	// 		echo '
@@ -272,12 +278,18 @@ function cffs_save_image($tmpname, $filename, $postdata) {
 }
 
 function cffs_save_data($postdata) {
-	global $current_user, $cffs_error;
+	global $current_user, $cffs_error, $cffs_page_to_edit;
 	
 	if (function_exists('kses_init_filters')) {
 		kses_init_filters();
 	}
-	$post_id = wp_insert_post($postdata['postdata']);
+	if (empty($cffs_page_to_edit)) {
+		$post_id = wp_insert_post($postdata['postdata']);
+	}
+	else {
+		$postdata['postdata']['ID'] = $cffs_page_to_edit;
+		$post_id = wp_update_post($postdata['postdata']);
+	}
 	if (!$post_id) {
 		$cffs_error->add("post-not-saved","An unknown error prevented your Submission, please try again.");
 	}
@@ -317,7 +329,7 @@ function cffs_save_post_meta($post_ID, $data = ''){
 			else {
 				$value = wp_filter_post_kses($value);
 			}
-			if (!add_post_meta($post_ID, wp_filter_nohtml_kses($key), $value)) {
+			if (!update_post_meta($post_ID, wp_filter_nohtml_kses($key), $value)) {
 				$cffs_error->add($key.'-not-saved', "Unable to save $key");
 			}
 		}
@@ -341,6 +353,20 @@ function cffs_kses_filter_array($data) {
 	return $sanitized;
 }
 
+# form utility functions
+
+/**
+ * Placeholder function for site by site authentication implementation
+ * defaults to false, ie. user can't edit.
+ */
+function cffs_user_can_edit($page_id, $user_id = null) {
+	global $current_user;
+	if (is_null($user_id)) {
+		$user_id = $current_user->id;
+	}
+	return apply_filters('cffs_user_can_edit',FALSE, $page_id, $user_id);
+}
+
 function cffs_error_css_class($name,$error) {
 	$class = '';
 	if (in_array($name,$error->get_error_codes())) {
@@ -356,16 +382,37 @@ function cffs_error_css_class($name,$error) {
  * @return string
  */
 function cffs_form_element_value($name) {
+	global $cffs_config, $cffs_page_to_edit;
 	if (isset($_POST[$name]) && !empty($_POST[$name])) {
 		return stripslashes(htmlspecialchars($_POST[$name],ENT_QUOTES));
 	}
 	else if (isset($_FILES[$name]) && is_array($_FILES[$name])) {
 		return $_FILES[$name];
 	}
+	elseif (isset($cffs_page_to_edit) && !empty($cffs_page_to_edit)) {
+		foreach ($cffs_config as $section => $values) {
+			foreach($values['items'] as $item) {
+				if ($item['name'] == $name) {
+					switch ($item['type']) {
+						case 'postdata':
+							$value  = get_post_field($name, $cffs_page_to_edit);
+							break;
+						case 'post_meta':
+							$value = get_post_meta($cffs_page_to_edit, $name, TRUE);
+							break;
+						default:
+							$value = 'oops, it bwoke!';
+					}
+					return $value;
+				}
+			}
+		}
+	}
 	else {
 		return null;
 	}
 }
+# end form utility functions
 
 /**
  * @description asembles a link tag for an image stored as an attachement of a
