@@ -267,7 +267,8 @@ function cffs_save_image($tmpname, $filename, $postdata) {
 	global $cffs_error;
 	// If the file is successfully moved, add it and its meta data
 
-	if (strpos($filename, trim(ABSPATH, '/') !== false) && @move_uploaded_file($tmpname, $filename)) {
+	if (strpos($filename, trim(ABSPATH, '/')) !== false && @move_uploaded_file($tmpname, $filename)) {
+		echo '<h1>ok, we got past the first check...</h1>';
 		$attachment_id = wp_insert_attachment($postdata, $filename, 0);	
 		$attachment_data = wp_generate_attachment_metadata($attachment_id, $filename);
 		if (wp_update_attachment_metadata($attachment_id, $attachment_data)) {
@@ -367,11 +368,18 @@ function cffs_user_can_edit($page_id, $user_id = null) {
 	return apply_filters('cffs_user_can_edit',FALSE, $page_id, $user_id);
 }
 
-function cffs_error_css_class($name,$error) {
-	$class = '';
+function cffs_get_error_css_class($name,$error) {
 	if (in_array($name,$error->get_error_codes())) {
-		$class = ' class="error"';
+		$error_class = apply_filters('cffs_error_css_class','error');
 	}
+	return $error_class;
+}
+
+/**
+ * This function kept for compatibility purposes
+ */
+function cffs_error_css_class($name,$error) {
+	$class = ' class="'.cffs_get_error_css_class($name,$error).'"';
 	return $class;
 }
 
