@@ -369,7 +369,8 @@ function cffs_user_can_edit($page_id, $user_id = null) {
 }
 
 function cffs_get_error_css_class($name,$error) {
-	if (in_array($name,$error->get_error_codes())) {
+	
+	if (is_wp_error($error) && in_array($name,$error->get_error_codes())) {
 		$error_class = apply_filters('cffs_error_css_class','error');
 	}
 	return $error_class;
