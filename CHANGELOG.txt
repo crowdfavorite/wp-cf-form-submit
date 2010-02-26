@@ -1,7 +1,7 @@
 # CF Form Submit Changelog
 
 ## 1.3.2
-- code steam lined and cleaned up
+- code-steam lined and cleaned up
 
 ## 1.3.1
 - fixed KSES filtering to account for Arrays properly
