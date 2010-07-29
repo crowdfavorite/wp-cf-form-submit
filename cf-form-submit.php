@@ -659,14 +659,12 @@ function cffs_decide_input_tupe($name) {
  * first letter
  * 
  * @param string $text - the name of the key that needs to be converted to a label
- * @return string $label - the lable
+ * @return string $label - the label
 **/
 function cffs_make_label($text, $remove = null) {
 	$label = ucwords(str_replace('_',' ',$text));
 	$label = (!empty($remove))?str_ireplace($remove, '', $label):$label;
 	return $label;
 }
-
-//a:21:{s:11:"plugin_name";s:14:"cf-form-submit";s:10:"plugin_uri";s:24:"http://crowdfavorite.com";s:18:"plugin_description";s:69:"Allows the processing of forms, utilizing such things as cf_post_meta";s:14:"plugin_version";s:3:"0.5";s:6:"prefix";s:4:"cffs";s:12:"localization";N;s:14:"settings_title";N;s:13:"settings_link";N;s:4:"init";s:1:"1";s:7:"install";b:0;s:9:"post_edit";b:0;s:12:"comment_edit";b:0;s:6:"jquery";b:0;s:6:"wp_css";b:0;s:5:"wp_js";b:0;s:9:"admin_css";b:0;s:8:"admin_js";b:0;s:15:"request_handler";s:1:"1";s:6:"snoopy";b:0;s:11:"setting_cat";s:1:"1";s:14:"setting_author";s:1:"1";}
 
 ?>
