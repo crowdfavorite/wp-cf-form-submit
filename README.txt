@@ -29,7 +29,7 @@ a configuration array is used to set which form fields are required:
 				'post_title' => 'You must include a Post Title' // name => error message
 			),
 			// names of any post_meta fields.  If you use cf_post_meta plugin these should match up with the names of those post_meta items
-			'post_meata' => array(
+			'post_meta' => array(
 				'_meta_field_name' 
 			),
 			// names of any user_meta fields you want to include
