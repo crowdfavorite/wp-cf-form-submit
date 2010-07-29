@@ -89,6 +89,9 @@ function cffs_init() {
 	if (!empty($_REQUEST['cffs_page_to_edit'])) {
 		$cffs_page_to_edit = $_REQUEST['cffs_page_to_edit'];
 	}
+	elseif (!empty($_POST['ID'])) {
+		$cffs_page_to_edit = $_POST['ID'];
+	}
 	# we need to reimplement required setting/plugins checking
 	// if (!defined('CF_FORM_CATEGORY_ID')) {
 	// 		echo '
@@ -191,24 +194,40 @@ function cffs_validate_data() {
 			$data[$item['type']][$item['name']] = stripslashes(attribute_escape($_POST[$item['name']]));
 		}
 		elseif ($item['data_type'] == 'block' && isset($_POST['blocks'][$item['name']])) {			
-
+			$i = 0;
 			foreach ($_POST['blocks'][$item['name']] as $value) {
+				if ($item['type'] == 'attachment') {
+					if (isset($_FILES) && !empty($_FILES)) {
+						$att_data = array(
+							'name'		=> $_FILES['blocks']['name'][$item['name']][$i]['_media_file'],
+							'type'		=> $_FILES['blocks']['type'][$item['name']][$i]['_media_file'],
+							'tmp_name'	=> $_FILES['blocks']['tmp_name'][$item['name']][$i]['_media_file'],
+							'size'		=> $_FILES['blocks']['size'][$item['name']][$i]['_media_file'],
+							'error'		=> $_FILES['blocks']['error'][$item['name']][$i]['_media_file'],
+						);
+						if (isset($att_data['name']) && !empty($att_data['name']) && $att_data['tmp_name'] != 'none') {
+							$attachment_id = cffs_process_image($att_data,$value);
+							$data['attachmentdata'][] = array('ID'=>$attachment_id);
+						}
+						elseif(!empty($value['ID'])) {
+							$data['attachmentdata'][] = $value;
+						}
+						elseif(!empty($value['post_title'])) {
+							$cffs_error->add('upload-failed', 'The file you titled '.$value['post_title'].' failed to upload, most likely because the file type is not allowed. Allowed file types are: '.get_site_option('upload_filetypes'));
+						}
+					}
+				}
+				
 				// keep items where all values are empty from being saved
 				$control = '';
 				foreach($value as $value_item) { $control .= $value_item; }
-				
+
 				if(strlen(trim($control)) > 0) { 
 					$data[$item['type']][$item['name']][] = $value;
 				}
-			}
 			
-			// foreach ($_POST['blocks'][$item['name']] as $block_item) {
-			// 	$allowed_fields = array_keys($item['items']);
-			// 	if (in_array($block_item, $allowed_fields)) {
-			// 		
-			// 		$data[$item['type']][$item['name']][][$children_name] = stripslashes(attribute_escape($block_item));
-			// 	}
-			// }
+				$i ++;
+			}
 		}
 		elseif (isset($_FILES[$item['name']]) && $_FILES[$item['name']]['size'] > 0 && $_FILES[$item['name']]['temp_name'] != 'none') {
 			$image_id = cffs_process_image($_FILES[$item['name']]);
@@ -220,26 +239,38 @@ function cffs_validate_data() {
 		return false;
 	}
 	return $data;
-	
 }
 
 /**
  * process uploaded images, add to the media library and prep for 
  * cf-featured-image integration
 **/
-function cffs_process_image($image) {
+function cffs_process_image($image, $data = NULL) {
 	global $cffs_error;
 	// @todo failier handling needs to be implemented.
 	$uploaddir = wp_upload_dir();
 	if (!empty($uploaddir['error'])) {
 		$cffs_error->add('image-not-saved', $uploaddir['error']);
-		return false;
+		return FALSE;
+	}
+	$is_allowed_filetype = wp_check_filetype($image['name']);
+	$max_allowed_filesize = get_site_option('fileupload_maxk');
+	if ($is_allowed_filetype['ext'] == FALSE && $is_allowed_filetype['type'] == FALSE) {
+		$cffs_error->add('filetype-not-allowed', 'The file '.$image['name'].' is a '. $image['type'].' file, which is not allowed.  Allowed filetypes are: '.get_site_option('upload_filetypes'));
+		return FALSE;
+	}
+	$size = (int) ($image['size'] / 1024);
+	echo '<h1>size</h1><pre>'.print_r($size,TRUE).'</pre>';
+	echo '<h1>max_allowed_filesize</h1><pre>'.print_r($max_allowed_filesize,TRUE).'</pre>';
+	
+	if ($size > $max_allowed_filesize) {
+		$cffs_error->add('file-exceeds-max-filesize', 'The file you uploaded is '.($size).' kb, which exceeds the max file-size of '.$max_allowed_filesize.' kb');
+		return FALSE;
 	}
 	$file = str_replace(' ', '-', $image['name']);
 	$post_date = date('Y-m-d 00:00:00');
 	$postdata = array(
 		'post_status' => 'publish',
-		'post_type' => 'post',
 		'post_content' => '',
 		'post_title' => $image['name'],
 		'post_date' => $post_date,
@@ -247,13 +278,16 @@ function cffs_process_image($image) {
 		'guid' => $uploaddir['url'].'/'.$file,
 		'post_mime_type' => $image['type'],			
 	);
+	if (!is_null($data)) {
+		$postdata = array_merge($postdata, $data);
+	}
 	$filename = $uploaddir['path'].'/'.$file;
 	$attachment_id = cffs_save_image($image['tmp_name'], $filename, $postdata);
 	if (!$attachment_id) {
 		$cffs_error->add('image-not-saved', 'Unfortunately your image, could not be saved.');
 	}
 	else {
-		// return the attachement id so that it can be used by cffp.
+		// return the attachment id so that it can be used by cffp.
 		return $attachment_id;
 	}
 }
@@ -268,7 +302,7 @@ function cffs_save_image($tmpname, $filename, $postdata) {
 	// If the file is successfully moved, add it and its meta data
 
 	if (strpos($filename, trim(ABSPATH, '/')) !== false && @move_uploaded_file($tmpname, $filename)) {
-		echo '<h1>ok, we got past the first check...</h1>';
+		
 		$attachment_id = wp_insert_attachment($postdata, $filename, 0);	
 		$attachment_data = wp_generate_attachment_metadata($attachment_id, $filename);
 		if (wp_update_attachment_metadata($attachment_id, $attachment_data)) {
@@ -294,9 +328,25 @@ function cffs_save_data($postdata) {
 	if (!$post_id) {
 		$cffs_error->add("post-not-saved","An unknown error prevented your Submission, please try again.");
 	}
-	else if (isset($postdata['user_meta']) && is_array($postdata['user_meta']) && count($postdata['user_meta'])) {
-		foreach ($postdata['user_meta'] as $key => $value) {
-			update_usermeta($current_user->ID, wp_filter_nohtml_kses($key), wp_filter_post_kses($value));
+	else {
+		if (isset($postdata['user_meta']) && is_array($postdata['user_meta']) && count($postdata['user_meta'])) {
+			foreach ($postdata['user_meta'] as $key => $value) {
+				update_usermeta($current_user->ID, wp_filter_nohtml_kses($key), wp_filter_post_kses($value));
+			}
+		}
+		// get a list of current attachments to compare to what there should be...
+		$previous_attachements = get_posts(array('post_type'=>'attachment', 'post_status'=>'inherit', 'post_parent'=>$post_id, 'posts_per_page'=>-1));
+		if ((isset($postdata['attachmentdata']) && is_array($postdata['attachmentdata']) && count($postdata['attachmentdata'])) || count($previous_attachements)) {
+			foreach ($postdata['attachmentdata'] as $attachment) {
+				$current_attachments[] = $attachment['ID'];
+				wp_insert_attachment($attachment, FALSE, $post_id);
+			}
+			foreach ($previous_attachements as $attachment) {
+				// remove any that weren't saved/updated just now.
+				if (!in_array($attachment->ID, $current_attachments)) {
+					wp_delete_attachment($attachment->ID);
+				}
+			}
 		}
 	}
 	if (count($cffs_error->errors) == 0) {
@@ -424,7 +474,7 @@ function cffs_form_element_value($name) {
 # end form utility functions
 
 /**
- * @description asembles a link tag for an image stored as an attachement of a
+ * @description asembles a link tag for an image stored as an attachment of a
  * post or page
 **/
 function cffs_user_img_tag($user_id, $size = 'thumbnail', $user_meta) {
