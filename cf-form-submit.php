@@ -170,12 +170,27 @@ function cffs_validate_data() {
 			if (!is_array($item['required'])) {
 				// only one item now, but we may find othe common, simple validation situations
 				switch ($item['required']) {
-					// simply tests that a value was entered.
 					case 'present':
-						if((!isset($_POST[$item['name']]) || empty($_POST[$item['name']])) && (!isset($_FILES[$item['name']]) || empty($_FILES[$item['name']]['name']))) {
-							$cffs_error->add($item['name'],$item['error_message']);
-						}
+						// simply tests that a value was entered.
+						$r = ((!isset($_POST[$item['name']]) || empty($_POST[$item['name']])) && (!isset($_FILES[$item['name']]) || empty($_FILES[$item['name']]['name'])));
 						break;
+					case 'is_category': 
+						// check if it's a category
+						$term = term_exists($data[$field_name], 'category');
+						$r = !empty($term);
+					case 'is_tag': 
+						// check if it's a tag
+						$term = term_exists($data[$field_name], 'post_tag');
+						$r = !empty($term);
+					default:
+						// Run filter to return bool against current field and $_POST value
+						$r = apply_filters('cffs_validate_required_field', true, $item['name'], $_POST);
+						break;
+				}
+				
+				// Add an error if we have an invalid item
+				if (!$r) {
+					$cffs_error->add($item['name'], $item['error_message']);
 				}
 			}
 			else {
