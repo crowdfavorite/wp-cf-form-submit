@@ -150,6 +150,7 @@ add_filter('cf_meta_actions', 'cffs_run_post_meta', 10);
 function cffs_validate_data() {
 	global $cffs_error;
 	$cffs_config = cffs_get_config();
+	/* Don't believe this is used anywhere
 	$cffs_allowed_postdata = apply_filters(
 		'cffs_get_postdata_fields',
 		array(
@@ -157,22 +158,34 @@ function cffs_validate_data() {
 			'post_content'
 		)
 	);
+	*/
 	$data = apply_filters('cffs_filter_postdata', array());
 
 // TODO - error handling if POST doesn't have expected data
-
 	if (!isset($cffs_config[$_POST['cffs_form_name']])) {
 		return false;
 	}
-
-	foreach ($cffs_config[$_POST['cffs_form_name']]['items'] as $item) {
+	
+	$items = $cffs_config[$_POST['cffs_form_name']]['items'];
+	foreach ($items as $item) {
+		// See if our field is a required one
 		if (isset($item['required']) && !empty($item['required'])) {
 			if (!is_array($item['required'])) {
-				// only one item now, but we may find othe common, simple validation situations
+				// Check out what kind of required is it?
 				switch ($item['required']) {
 					case 'present':
 						// simply tests that a value was entered.
-						$r = ((!isset($_POST[$item['name']]) || empty($_POST[$item['name']])) && (!isset($_FILES[$item['name']]) || empty($_FILES[$item['name']]['name'])));
+						$r = (
+							(
+								isset($_POST[$item['name']]) // we have the item as a regular input
+								&& !empty($_POST[$item['name']]) // it's not empty too
+							) 
+							|| 
+							(
+								isset($_FILES[$item['name']]) // we have a file
+								&& !empty($_FILES[$item['name']]['name']) // file name is not empty
+							)
+						);
 						break;
 					case 'is_category': 
 						// check if it's a category
@@ -182,9 +195,10 @@ function cffs_validate_data() {
 						// check if it's a tag
 						$term = term_exists($data[$field_name], 'post_tag');
 						$r = !empty($term);
+					case 'filter': // fall through
 					default:
 						// Run filter to return bool against current field and $_POST value
-						$r = apply_filters('cffs_validate_required_field', true, $item['name'], $_POST);
+						$r = apply_filters('cffs_validate_required_field', true, $item['name'], $item);
 						break;
 				}
 				
@@ -250,9 +264,12 @@ function cffs_validate_data() {
 		}
 	}
 	
+	// If we have errors return false
 	if (count($cffs_error->errors) > 0) {
 		return false;
 	}
+
+	$data = apply_filters('cffs_after_validate_data', $data, $cffs_config, $items);
 	return $data;
 }
 
