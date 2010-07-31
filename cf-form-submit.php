@@ -352,10 +352,12 @@ function cffs_save_data($postdata) {
 	}
 	if (empty($cffs_page_to_edit)) {
 		$post_id = wp_insert_post($postdata['postdata']);
+		$insert_v_update = 'insert';
 	}
 	else {
 		$postdata['postdata']['ID'] = $cffs_page_to_edit;
 		$post_id = wp_update_post($postdata['postdata']);
+		$insert_v_update = 'update';
 	}
 	if (!$post_id) {
 		$cffs_error->add("post-not-saved","An unknown error prevented your Submission, please try again.");
@@ -382,14 +384,27 @@ function cffs_save_data($postdata) {
 		}
 	}
 	if (count($cffs_error->errors) == 0) {
-		$notify_me = get_option('admin_email');
-		$notify_me = apply_filters('cffs_set_notify_email',$notify_me);
+		$notify_me = apply_filters('cffs_set_notify_email', get_option('admin_email'));
 		$type = apply_filters('cffs_set_submission_type','post');
 		$blogname = get_option('blogname');
-		$subject = '['.$blogname.'] A new '.$type.' needs your review';
-		$message = 'A new '.$type.' titled "'.$postdata['postdata']['post_title'].'" was just submitted to '.$blogname.' by '.$current_user->user_nicename."\r\n\r\n";
-		$message .= 'To review this '.$type.' click here: '.admin_url('post.php?action=edit&post='.$post_id)."\r\n";
-		$message .= 'To review '.$current_user->user_nicename.'\'s profile click here: '.admin_url('user-edit.php?user_id='.$current_user->ID);
+		if ($insert_v_update = 'insert') {
+			$subject = '['.$blogname.'] '.__('A new').' '.$type.' '.__('needs your review');
+			$message = __('A new').' '.$type.' '.__('titled').' "'.$postdata['postdata']['post_title'].'" '.__('was just submitted to').' '.$blogname.' '.__('by').' '.$current_user->user_nicename."\r\n\r\n";
+		}
+		else {
+			$subject = '['.$blogname.'] '.__('An updated').' '.$type.' '.__('needs your review');
+			$message = __('A').' '.$type.' '.__('titled').' "'.$postdata['postdata']['post_title'].'" '.__('was just updated to').' '.$blogname.' '.__('by').' '.$current_user->user_nicename."\r\n\r\n";
+			
+		}
+		// Common footer to the email
+		$message .= __('To review this').' '.$type.' '.__('click here').': '.admin_url('post.php?action=edit&post='.$post_id)."\r\n";
+		$message .= __('To review').' '.$current_user->user_nicename.'\'s '.__('profile click here').': '.admin_url('user-edit.php?user_id='.$current_user->ID);
+		
+		// Add some filters to the subject and message
+		$subject = apply_filters('cffs_filter_success_email_subject', $subject, compact('insert_v_update', 'blogname', 'type'));
+		$message = apply_filters('cffs_filter_success_email_message', $message, compact('insert_v_update', 'blogname', 'type', 'postdata', 'current_user'));
+		
+		// Shoot off our email now!
 		wp_mail($notify_me, $subject, $message);
 		
 		$page_url = apply_filters('cf_form_submit_redirect', get_option('siteurl'), $post_id);
@@ -400,19 +415,22 @@ function cffs_save_data($postdata) {
 }
 
 function cffs_save_post_meta($post_ID, $data = ''){
-	global $valid_data;
+	global $valid_data, $cffs_error;
 	if (!empty($data)) {
 		$valid_data = $data;
 	}
 	if (isset($valid_data['post_meta']) && is_array($valid_data['post_meta']) && count($valid_data['post_meta'])) {
 		foreach ($valid_data['post_meta'] as $key => $value) {
+			$clean_key = wp_filter_nohtml_kses($key);
 			if (is_array($value)) {
 				$value = cffs_kses_filter_array($value);
 			}
 			else {
 				$value = wp_filter_post_kses($value);
 			}
-			if (!update_post_meta($post_ID, wp_filter_nohtml_kses($key), $value)) {
+			// clear our existing value, so we can really get a true response next.
+			update_post_meta($post_ID, $clean_key, ''); 
+			if (!update_post_meta($post_ID, $clean_key, $value)) {
 				$cffs_error->add($key.'-not-saved', "Unable to save $key");
 			}
 		}
@@ -494,7 +512,8 @@ function cffs_form_element_value($name) {
 						default:
 							$value = 'oops, it bwoke!';
 					}
-					return $value;
+					$val = apply_filters('cffs_field_value', $value, compact('item', 'name'));
+					return $val;
 				}
 			}
 		}
