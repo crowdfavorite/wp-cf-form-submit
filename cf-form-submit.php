@@ -363,6 +363,9 @@ function cffs_save_data($postdata) {
 		$cffs_error->add("post-not-saved","An unknown error prevented your Submission, please try again.");
 	}
 	else {
+		// allow us to hook in here.
+		do_action('cffs_post_inserted', compact('postdata', 'post_id'));
+		
 		if (isset($postdata['user_meta']) && is_array($postdata['user_meta']) && count($postdata['user_meta'])) {
 			foreach ($postdata['user_meta'] as $key => $value) {
 				update_usermeta($current_user->ID, wp_filter_nohtml_kses($key), wp_filter_post_kses($value));
