@@ -387,7 +387,7 @@ function cffs_save_data($postdata) {
 		$notify_me = apply_filters('cffs_set_notify_email', get_option('admin_email'));
 		$type = apply_filters('cffs_set_submission_type','post');
 		$blogname = get_option('blogname');
-		if ($insert_v_update = 'insert') {
+		if ($insert_v_update == 'insert') {
 			$subject = '['.$blogname.'] '.__('A new').' '.$type.' '.__('needs your review');
 			$message = __('A new').' '.$type.' '.__('titled').' "'.$postdata['postdata']['post_title'].'" '.__('was just submitted to').' '.$blogname.' '.__('by').' '.$current_user->user_nicename."\r\n\r\n";
 		}
@@ -402,7 +402,7 @@ function cffs_save_data($postdata) {
 		
 		// Add some filters to the subject and message
 		$subject = apply_filters('cffs_filter_success_email_subject', $subject, compact('insert_v_update', 'blogname', 'type'));
-		$message = apply_filters('cffs_filter_success_email_message', $message, compact('insert_v_update', 'blogname', 'type', 'postdata', 'current_user'));
+		$message = apply_filters('cffs_filter_success_email_message', $message, compact('insert_v_update', 'blogname', 'type', 'postdata', 'current_user', 'post_id'));
 		
 		// Shoot off our email now!
 		wp_mail($notify_me, $subject, $message);
