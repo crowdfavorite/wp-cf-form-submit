@@ -10,9 +10,6 @@ Author URI: http://crowdfavorite.com
 
 // ini_set('display_errors', '1'); ini_set('error_reporting', E_ALL);
 
-require_once(ABSPATH . 'wp-includes/pluggable.php');
-require_once(ABSPATH . 'wp-admin/includes/admin.php');
-
 if (!defined('PLUGINDIR')) {
 	define('PLUGINDIR','wp-content/plugins');
 }
@@ -76,10 +73,6 @@ function cffs_admin_head() {
 	}
 	
 }
-
-if (is_admin()) {
-	wp_enqueue_script('jquery');
-}
 add_action('admin_head', 'cffs_admin_head');
 
 $cffs_page_to_edit = null;
@@ -92,6 +85,16 @@ function cffs_init() {
 	elseif (!empty($_POST['ID'])) {
 		$cffs_page_to_edit = $_POST['ID'];
 	}
+	
+	if (current_user_can('edit_pages')) {
+		add_action('show_user_profile', 'cffs_user_form');
+		add_action('edit_user_profile', 'cffs_user_form');
+	}
+	
+	if (is_admin()) {
+		wp_enqueue_script('jquery');
+	}
+	
 	# we need to reimplement required setting/plugins checking
 	// if (!defined('CF_FORM_CATEGORY_ID')) {
 	// 		echo '
@@ -103,6 +106,11 @@ function cffs_init() {
 	// 	}
 }
 add_action('init','cffs_init');
+
+function cffs_admin_init() {
+	add_meta_box('usermetadiv', __('User Meta Data'), 'cffs_add_user_metabox', 'post', 'advanced', 'high');
+}
+add_action('admin_init', 'cffs_admin_init');
 
 function cffs_set_config() {
 	global $cffs_config;
@@ -598,7 +606,6 @@ function cffs_add_user_metabox() {
 	}
 	echo $user_metabox;
 }
-add_meta_box('usermetadiv', __('User Meta Data'), 'cffs_add_user_metabox', 'post', 'advanced', 'high');
 
 /**
  * Add fields for the user meta to be edited on the profile page
@@ -649,11 +656,6 @@ function cffs_user_form() {
 	}
 	echo $user_meta_form;
 }
-if (current_user_can('edit_pages')) {
-	add_action('show_user_profile', 'cffs_user_form');
-	add_action('edit_user_profile', 'cffs_user_form');
-}
-
 
 /**
  * process user meta submited from the profile page

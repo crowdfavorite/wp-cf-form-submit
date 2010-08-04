@@ -1,5 +1,8 @@
 # CF Form Submit Changelog
 
+## trunk
+- cleaned up load order so that pluggable.php and admin.php don't need to be explicitly loaded
+
 ## 1.4
 - Added ability to edit existing posts
 - Adjusted css error class functions so that only the class name is returned, allowing other classes to be added to form fields. Old function name still works in the same way for backwards compatibility.
