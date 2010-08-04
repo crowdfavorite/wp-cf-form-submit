@@ -1,6 +1,6 @@
 # CF Form Submit Changelog
 
-## trunk
+## 1.4.1 (trunk)
 - cleaned up load order so that pluggable.php and admin.php don't need to be explicitly loaded
 
 ## 1.4
