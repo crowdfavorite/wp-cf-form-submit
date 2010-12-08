@@ -1,6 +1,9 @@
 # CF Form Submit Changelog
 
-## 1.4.1 (trunk)
+## 1.4.2
+- Adjusted "pending approval" links to work with wp 3.0.x edit screens and get variables
+
+## 1.4.1
 - cleaned up load order so that pluggable.php and admin.php don't need to be explicitly loaded
 
 ## 1.4
