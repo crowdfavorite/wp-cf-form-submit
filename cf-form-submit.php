@@ -28,12 +28,12 @@ function cffs_admin_head() {
 		foreach ($cffs_config as $key => $value) {
 			if ($value['type'] == 'page' && !$pagelink_set) {
 				$parent_slug = $value['parent_id'];
-				$editpage = 'edit-pages.php';
-				$parentstring = 'post_parent';
+				$editpage = 'edit.php';
+				$parentstring = 'wphc_parent';
 				$label_name = ucwords(str_ireplace('_', ' ', $key));
 				$javascript_head .= '
 			jQuery(function($) {
-				$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_status=pending&'.$parentstring.'='.$parent_slug.'\">Pending Review</a></li>");
+				$("#menu-'.$value['type'].'s .wp-submenu ul").append("<li><a tabindex=\"1\" href=\"'.$editpage.'?post_type=page&post_status=pending&'.$parentstring.'='.$parent_slug.'\">Pending Review</a></li>");
 			});
 				';
 				$pagelink_set = TRUE;
