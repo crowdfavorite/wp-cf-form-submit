@@ -290,8 +290,8 @@ function cffs_process_image($image, $data = NULL) {
 	// @todo failier handling needs to be implemented.
 	$uploaddir = wp_upload_dir();
 	if (!empty($uploaddir['error'])) {
-		$cffs_error->add('image-not-saved', $uploaddir['error']);
-		return FALSE;
+		$cffs_error->add('media-not-saved', $uploaddir['error']);
+		return false;
 	}
 	$is_allowed_filetype = wp_check_filetype($image['name']);
 	$max_allowed_filesize = get_site_option('fileupload_maxk');
@@ -324,7 +324,7 @@ function cffs_process_image($image, $data = NULL) {
 	$filename = $uploaddir['path'].'/'.$file;
 	$attachment_id = cffs_save_image($image['tmp_name'], $filename, $postdata);
 	if (!$attachment_id) {
-		$cffs_error->add('image-not-saved', 'Unfortunately your image, could not be saved.');
+		$cffs_error->add('media-not-saved', 'Unfortunately your '.$image['type'].', could not be saved.');
 	}
 	else {
 		// return the attachment id so that it can be used by cffp.
@@ -342,7 +342,7 @@ function cffs_save_image($tmpname, $filename, $postdata) {
 	// If the file is successfully moved, add it and its meta data
 
 	if (strpos($filename, trim(ABSPATH, '/')) !== false && @move_uploaded_file($tmpname, $filename)) {
-		
+		// echo '<h1>ok, we got past the first check...</h1>';
 		$attachment_id = wp_insert_attachment($postdata, $filename, 0);	
 		$attachment_data = wp_generate_attachment_metadata($attachment_id, $filename);
 		if (wp_update_attachment_metadata($attachment_id, $attachment_data)) {
