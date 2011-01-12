@@ -1,5 +1,9 @@
 # CF Form Submit Changelog
 
+## 1.5 (trunk not stable for mass deploy)
+- Altered image attachments to posts to be uploaded using media_handle_upload WordPress function 
+- Created default-filters.php and added the various functionality that happens after the post is created as filters.  
+
 ## 1.4.2
 - Adjusted "pending approval" links to work with wp 3.0.x edit screens and get variables
 
